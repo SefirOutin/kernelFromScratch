@@ -1,12 +1,15 @@
 [bits 32]
 
+MAGIC_NUMBER equ 0xE85250D6
+HEADER_LENGHT equ last_tag_end - magic_fields
+
 section .multiboot_header
 magic_fields:
 	align 8
-	dd 0xE85250D6							; magic number
+	dd 	MAGIC_NUMBER						; magic number
 	dd 0									; architecture
-	dd last_tag_end - magic_fields		; header length
-	dd 0x100000000 - (0xE85250D6 + (last_tag_end - magic_fields))	; checksum
+	dd HEADER_LENGHT						; header length
+	dd 0x100000000 - (MAGIC_NUMBER + HEADER_LENGHT)		; checksum
 magic_fields_end:
 
 mbi_request_tag:
@@ -14,28 +17,28 @@ mbi_request_tag:
 	dw 1									; type multiboot2 information request
 	dw 0									; flags
 	dd mbi_request_tag_end - mbi_request_tag; size
-	dd 8									; mdi_tag_types array
+	dd 8, 0									; mdi_tag_types array
 mbi_request_tag_end:
 
-address_tag:
-	align 8
-	dw 2									; type: address tag
-	dw 0									; flags
-	dd address_tag_end - address_tag		; size
-	dd magic_fields							; header address
-	dd _start								; load addr of code entry
-	dd 0									; end addr of code (here assumes its the whole iso)
-	dd bss_end								; end addr of bss section
-address_tag_end:
+; address_tag:
+; 	align 8
+; 	dw 2									; type: address tag
+; 	dw 0									; flags
+; 	dd address_tag_end - address_tag		; size
+; 	dd magic_fields							; header address
+; 	dd _start								; load addr of code entry
+; 	dd 0									; end addr of code (here assumes its the whole iso)
+; 	dd bss_end								; end addr of bss section
+; address_tag_end:
 
 
-entry_addr_tag:
-	align 8
-	dw 3									; type: entry address tag
-	dw 0									; flags
-	dd entry_addr_tag_end - entry_addr_tag	; size
-	dd multiboot_entry						; entry address into kernel
-entry_addr_tag_end:	
+; entry_addr_tag:
+; 	align 8
+; 	dw 3									; type: entry address tag
+; 	dw 0									; flags
+; 	dd entry_addr_tag_end - entry_addr_tag	; size
+; 	dd _start								; entry address into kernel
+; entry_addr_tag_end:
 
 flags_tag:
 	align 8
@@ -71,18 +74,16 @@ section .text
 	global _start
 
 _start:
-	xor eax, eax
-	xor ebx, ebx
-	jmp multiboot_entry
+	; xor eax, eax
+	; xor ebx, ebx
 
-
-multiboot_entry:
-	mov esp, stack_top						; set stack for the kernel
+	mov esp, stack_top						; set up stack
 	and esp, 0xFFFFFFF0						; align 16bytes - mask to round down
 
 	cmp eax, 0x36d76289						; eax must have this magic number given by grub
 	jne	endk
 
+	; push eax								; push magic number (2nd arg x86 conv)
 	; mov byte [0xb8000], 69
 	push ebx								; push grub struct (1st arg x86 conv)
 	extern kernel_main
