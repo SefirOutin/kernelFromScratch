@@ -2,14 +2,17 @@ OBJDIR = obj
 ISODIR = iso
 BOOTDIR = $(ISODIR)/boot
 GRUBDIR = $(BOOTDIR)/grub
-KERNEL_SRC = src/kernel_main.c
-MULTIBOOT_SRC = src/multiboot.s
-KERNEL_OBJ = $(OBJDIR)/kernel.o
-MULTIBOOT_OBJ = $(OBJDIR)/multiboot.o
 LINKER = linker.ld
 KERNEL_ELF = $(BOOTDIR)/os.elf
 ISO = k.iso
 GRUB_CFG = $(GRUBDIR)/grub.cfg
+CPPFLAGS = -I./include
+
+SRC_C := $(wildcard src/*.c)
+SRC_S := $(wildcard src/*.s)
+OBJ_C := $(patsubst src/%.c,$(OBJDIR)/%.o,$(SRC_C))
+OBJ_S := $(patsubst src/%.s,$(OBJDIR)/%.o,$(SRC_S))
+KERNEL_OBJ := $(OBJ_C) $(OBJ_S)
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
@@ -20,14 +23,14 @@ $(BOOTDIR):
 $(GRUBDIR):
 	mkdir -p $(GRUBDIR)
 
-$(KERNEL_OBJ): $(KERNEL_SRC) | $(OBJDIR)
-	i686-elf-gcc -g -c $< -o $@ -ffreestanding -W -W -W
+$(OBJDIR)/%.o: src/%.c | $(OBJDIR)
+	i686-elf-gcc -g $(CPPFLAGS) -c $< -o $@ -ffreestanding -Wall
 
-$(MULTIBOOT_OBJ): $(MULTIBOOT_SRC) | $(OBJDIR)
+$(OBJDIR)/%.o: src/%.s | $(OBJDIR)
 	nasm -felf32 $< -o $@
 
-$(KERNEL_ELF): $(KERNEL_OBJ) $(MULTIBOOT_OBJ) $(LINKER) | $(BOOTDIR)
-	i686-elf-gcc -g -T $(LINKER) -o $@ -ffreestanding -O2 -nostdlib $(KERNEL_OBJ) $(MULTIBOOT_OBJ) -lgcc
+$(KERNEL_ELF): $(KERNEL_OBJ) $(LINKER) | $(BOOTDIR)
+	i686-elf-gcc -g -T $(LINKER) -o $@ -ffreestanding -O2 -nostdlib $(KERNEL_OBJ) -lgcc
 
 $(ISO): $(KERNEL_ELF) $(GRUB_CFG)
 	sudo grub-mkrescue -o $@ $(ISODIR)
