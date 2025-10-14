@@ -2,6 +2,12 @@
 #define LIB_H
 
 #include <stddef.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include "serialDebug.h"
+
+
+#define BASE "0123456789ABCDEF"
 
 // i386 port I/O
 static inline void outb(unsigned short port, unsigned char val)
@@ -16,5 +22,11 @@ static inline unsigned char inb(unsigned short port)
     return ret;
 }
 size_t	strlen(const char *str);
+char	*strchr(const char *s, int c);
+void	*memset(void *p, int v, size_t size);
+
+
+int	printf(const char *str, ...);
+
 
 #endif

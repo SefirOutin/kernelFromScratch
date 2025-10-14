@@ -6,8 +6,8 @@
 #include <stddef.h>
 #include "lib.h"
 #include "video.h"
+#include "grubInfos.h"
 
-#define BASE "0123456789ABCDEF"
 
 
 

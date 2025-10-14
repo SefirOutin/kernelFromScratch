@@ -7,7 +7,7 @@
 
 void		serialInit(void);
 int			serialCanTx(void);
-void		serialPutc(char c);
-void		serialWrite(const char* s);
+uint8_t		serialPutc(char c);
+uint32_t	serialWrite(const char* s, uint32_t len);
 
 #endif

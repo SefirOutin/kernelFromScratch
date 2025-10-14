@@ -1,40 +1,26 @@
 #include "kernel.h"
 
-void putnbr(uint16_t n, size_t baseLen)
-{
-    if (n >= baseLen)
-        putnbr(n / baseLen, baseLen);
-    serialPutc(BASE[n % baseLen]);
-}
+
 
 int kernel_main(uint32_t *s)
 {
+    t_multiboot_struct mb2Sruct;
+    // struct multiboot_tag *tag;
 	serialInit();
-    uint32_t structLenght = *s;
-    // putnbr(1820, 16);
-    // putnbr(*s, DECBASE);
-    // serial_write("\n");
-    // serial_write("---fixed part---\n");
-    // putnbr(*s, DECBASE);
-    // serial_putc('\n');
-    // putnbr(*(s + 1), DECBASE);
-    // serial_putc('\n');
-    // serial_write("--------------\n");
-    
-    // uint32_t i = 8;
-    // while (1)
+    memset(&mb2Sruct, 0, sizeof(t_multiboot_struct));
+    // printf("\n%d\n", printf("oui %s", "non"));
+    // uint32_t structLenght = *s;
+    printf("struct len: %dbytes", sizeof(t_multiboot_struct));
+    // *((uint32_t *)0xA000) = 1;
+    // // uint8_t *tmp = (uint8_t *)s;
+    // for (tag = s + 8;
+    //     tag->type != MULTIBOOT_TAG_TYPE_END;
+    //     tag = (struct multiboot_tag *) ((uint8_t *) tag + ((tag->size + 7) & ~7)))
     // {
-    //     uint32_t type = *(s + i);
-    //     uint32_t tagSize = *(s + i + 4);
         
     // }
-    uint8_t *tmp = (uint8_t *)s;
-    for (uint32_t i = 0; i < structLenght; i++)
-    {
-        putnbr(*(tmp + i), 16);
-        serialWrite(" ");
-        if (!(i % 10) && i > 5)
-            serialPutc('\n');
-    }
+    
+    
+    
     while (1);
 }
