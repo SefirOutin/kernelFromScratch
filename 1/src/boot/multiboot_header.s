@@ -1,5 +1,5 @@
 SECTION .multiboot_header
-    .align 8
+    align 8
     header_start:
         dd 0xe85250d6                   ;magic number
         dd 0                            ;protected mode code
@@ -15,16 +15,16 @@ SECTION .multiboot_header
     header_end:
 
 
-global _start:
+global _start
+_start:
     mov esp,  stack_top
-    .align 16
     push ebx
-    call kmain
+    ;call kmain
     hlt
 
 
 SECTION .bss
-    .align 16
+    align 16
     stack_bottom:
-        .skip 16384      ; 16 KiB
+        resb 16384      ; 16 KiB
     stack_top:
