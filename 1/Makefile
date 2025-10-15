@@ -18,7 +18,16 @@ main.o: src/kernel/main.c
 kernel.elf: src/boot/multiboot_header.o src/kernel/main.o
 	$(LD) $(LDFLAGS) src/boot/multiboot_header.o src/kernel/main.o -o kernel.elf
 
-$(ISO): kernel.elf
+# Vérifie que le dossier i386-pc existe, sinon le télécharge et l'extrait localement
+$(HOME)/local/usr/lib/grub/i386-pc:
+	@echo "⚙️  Dossier i386-pc manquant, téléchargement du grub-pc-bin..."
+	mkdir -p $(HOME)/local/usr/lib/grub/
+	wget -q http://ftp.fr.debian.org/debian/pool/main/g/grub2/grub-pc-bin_2.12-1_i386.deb -O /tmp/grub-pc-bin.deb
+	dpkg-deb -x /tmp/grub-pc-bin.deb $(HOME)/local/
+	rm -f /tmp/grub-pc-bin.deb
+	@echo "✅ Modules GRUB installés localement dans $(HOME)/local/usr/lib/grub/i386-pc"
+
+$(ISO): $(HOME)/local/usr/lib/grub/i386-pc kernel.elf
 	mkdir -p iso/boot/grub/
 	cp kernel.elf iso/boot/
 	cp grub/grub.cfg iso/boot/grub/
