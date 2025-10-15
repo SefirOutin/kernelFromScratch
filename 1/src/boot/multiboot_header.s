@@ -14,14 +14,15 @@ SECTION .multiboot_header
         dd 8    ;size
     header_end:
 
-
+SECTION .text
 global _start
 _start:
     mov esp,  stack_top
     push ebx
-    ;call kmain
+    call kmain
+.hang:
     hlt
-
+    jmp .hang
 
 SECTION .bss
     align 16
