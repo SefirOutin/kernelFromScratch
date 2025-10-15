@@ -16,6 +16,9 @@ SECTION .multiboot_header
 
 SECTION .text
 global _start
+extern kmain
+
+
 _start:
     mov esp,  stack_top
     push ebx

@@ -1,21 +1,24 @@
-ENTRY(_start)
-. = 1M;
-.text :
+ENTRY(_start);
+SECTIONS
 {
-    *(.multiboot_header)
-    *(.text*)
+  . = 0x100000;
+  .text :
+  {
+      *(.multiboot_header)
+      *(.text*)
+  }
+  .rodata :
+  {
+      *(.rodata*)
+  }
+  .data :
+  {
+      *(.data*)
+  }
+  .bss :
+  {
+      *(COMMON)
+      *(.bss*)
+  }
+  end = .;
 }
-.rodata :
-{
-  *(.rodata*)
-}
-.data :
-{
-  *(.data*)
-}
-.bss :
-{
-  *(COMMON)
-  *(.bss*)
-}
-end = .;
