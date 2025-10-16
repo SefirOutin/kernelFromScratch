@@ -12,6 +12,14 @@ SECTION .multiboot_header
         dw 0    ;type
         dw 0    ;flag
         dd 8    ;size
+        framebuffer_tag_start:
+            dw  0x05    ;Type: framebuffer
+            dw  0x01    ;Optional tag
+            dd  framebuffer_tag_end - framebuffer_tag_start ;size
+            dd  0   ;Width - if 0 we let the bootloader decide
+            dd  0   ;Height - same as above
+            dd  0   ;Depth  - same as above
+        framebuffer_tag_end:
     header_end:
 
 SECTION .text
