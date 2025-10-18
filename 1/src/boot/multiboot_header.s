@@ -4,14 +4,9 @@ SECTION .multiboot_header
         dd 0xe85250d6                   ;magic number
         dd 0                            ;protected mode code
         dd header_end - header_start    ;header length
-    
-        ;checksum
-        dd 0x100000000 - (0xe85250d6 + 0 + (header_end - header_start)) 
-    
-        ; required end tag
-        dw 0    ;type
-        dw 0    ;flag
-        dd 8    ;size
+        dd 0x100000000 - (0xe85250d6 + 0 + (header_end - header_start)) ;checksum 
+
+        
         framebuffer_tag_start:
             dw  0x05    ;Type: framebuffer
             dw  0x01    ;Optional tag
@@ -19,21 +14,26 @@ SECTION .multiboot_header
             dd  0   ;Width - if 0 we let the bootloader decide
             dd  0   ;Height - same as above
             dd  0   ;Depth  - same as above
-        framebuffer_tag_end:
+        framebuffer_tag_end:        
+        
+        ; required end tag
+        dw 0    ;type
+        dw 0    ;flag
+        dd 8    ;size   
     header_end:
+    
+ 
 
 SECTION .text
 global _start
 extern kmain
-
-
 _start:
     mov esp,  stack_top
     push ebx
     call kmain
-.hang:
+.loop:
     hlt
-    jmp .hang
+    jmp .loop
 
 SECTION .bss
     align 16
