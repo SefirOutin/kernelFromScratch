@@ -9,14 +9,14 @@ ISO = kernel.iso
 # 🔹 Cible par défaut : tout construire
 all: $(ISO)
 
-multiboot_header.o: src/boot/multiboot_header.s
-	$(AS) $(ASFLAGS) src/boot/multiboot_header.s -o src/boot/multiboot_header.o
+boot.o: src/boot/boot.s
+	$(AS) $(ASFLAGS) src/boot/boot.s -o src/boot/boot.o
 
-main.o: src/kernel/main.c
-	$(CC) $(CFLAGS) src/kernel/main.c -o src/kernel/main.o
+kernel.o: src/kernel/kernel.c
+	$(CC) $(CFLAGS) src/kernel/kernel.c -o src/kernel/kernel.o
 
-kernel.elf: src/boot/multiboot_header.o src/kernel/main.o
-	$(LD) $(LDFLAGS) src/boot/multiboot_header.o src/kernel/main.o -o kernel.elf
+kernel.elf: src/boot/boot.o src/kernel/kernel.o
+	$(LD) $(LDFLAGS) src/boot/boot.o src/kernel/kernel.o -o kernel.elf
 
 # Vérifie que le dossier i386-pc existe, sinon le télécharge et l'extrait localement
 
