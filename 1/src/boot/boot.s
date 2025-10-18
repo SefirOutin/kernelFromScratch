@@ -26,11 +26,11 @@ SECTION .multiboot_header
 
 SECTION .text
 global _start
-extern kkernel
+extern kernel
 _start:
     mov esp,  stack_top
     push ebx
-    call kkernel
+    call kernel
 .loop:
     hlt
     jmp .loop
