@@ -2,7 +2,32 @@
 
 #define VgaWidth 80
 
-volatile uint16_t *vga = (char *)0xB8000;
+#define ATKBD_KEYMAP_SIZE       512
+
+static const unsigned short atkbd_set2_keycode[ATKBD_KEYMAP_SIZE] = {
+        0, 67, 65, 63, 61, 59, 60, 88,  0, 68, 66, 64, 62, 15, 41,117,
+        0, 56, 42, 93, 29, 16,  2,  0,  0,  0, 44, 31, 30, 17,  3,  0,
+        0, 46, 45, 32, 18,  5,  4, 95,  0, 57, 47, 33, 20, 19,  6,183,
+        0, 49, 48, 35, 34, 21,  7,184,  0,  0, 50, 36, 22,  8,  9,185,
+        0, 51, 37, 23, 24, 11, 10,  0,  0, 52, 53, 38, 39, 25, 12,  0,
+        0, 89, 40,  0, 26, 13,  0,  0, 58, 54, 28, 27,  0, 43,  0, 85,
+        0, 86, 91, 90, 92,  0, 14, 94,  0, 79,124, 75, 71,121,  0,  0,
+       82, 83, 80, 76, 77, 72,  1, 69, 87, 78, 81, 74, 55, 73, 70, 99,
+
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+      217,100,255,  0, 97,165,  0,  0,156,  0,  0,  0,  0,  0,  0,125,
+      173,114,  0,113,  0,  0,  0,126,128,  0,  0,140,  0,  0,  0,127,
+      159,  0,115,  0,164,  0,  0,116,158,  0,172,166,  0,  0,  0,142,
+      157,  0,  0,  0,  0,  0,  0,  0,155,  0, 98,  0,  0,163,  0,  0,
+       226,  0,  0,  0,  0,  0,  0,  0,  0,255, 96,  0,  0,  0,143,  0,
+         0,  0,  0,  0,  0,  0,  0,  0,  0,107,  0,105,102,  0,  0,112,
+       110,111,108,112,106,103,  0,119,  0,118,109,  0, 99,104,119,  0,
+ 
+        0,  0,  0, 65, 99,
+};
+
+volatile uint16_t *vga = (uint16_t *)0xB8000;
+
 
 typedef struct  terminal
 {
@@ -60,10 +85,14 @@ void    initTerm(tty *term)
     term->write = write;
 }
 
+// 01110001
+// 00100000
+
 int kernel_main(uint32_t *s)
 {
     tty term;
     initTerm(&term);
+	initPs2();
     printf("x: %d y: %d\n", term.xPos, term.yPos);
     term.write(&term, "oui", 3);
     term.write(&term, "oui", 3);
@@ -78,6 +107,19 @@ int kernel_main(uint32_t *s)
     term.write(&term, "oui", 3);
     term.write(&term, "oui", 3);
     term.write(&term, "oui", 3);
+	// inb(PS2Data);
+	int i = 0;
+	// while (i < 512)
+	// {
+	// 	printf("0x%X ",  atkbd_set2_keycode[i]);
+	// 	if (!(i++ % 15))
+	// 		printf("\n");
+
+	// }
+	uint8_t chart = getChar();
+	printf("char: 0x%X\n", chart);
+	term.write(&term, &chart, 1);
+    while (1);
     // term.updateCursor(&term, 1, 0);
     // char *vga = (char *)0xB8000;  // adresse mémoire VGA texte
     // vga[0] = '4';                 // premier caractère

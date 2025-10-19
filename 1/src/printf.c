@@ -1,11 +1,16 @@
 #include "lib.h"
 
+#define DECBASE "0123456789"
+#define HEXBASE "0123456789abcdef"
+#define HEXBASEUPPER "0123456789ABCDEF"
+#define BASELEN(BASE) sizeof(BASE) - 1 / sizeof(char)
+
 static int	check_format(const char *str);
 static void	oula(const char *str, va_list arg, size_t *len);
 size_t	pf_putchar(int c);
 size_t	pf_putstr(char *s);
 void	pf_putnbr(int nb, size_t *len);
-static void	pf_putnbr_base(unsigned long nb, char *base, size_t *len);
+// static inline void	pf_putnbr_base(unsigned long nb, const char *base, size_t *len, size_t baseLen);
 void	pf_convert_base(unsigned long nb, char index, size_t *len);
 
 
@@ -96,39 +101,41 @@ size_t	pf_putstr(char *s)
 	return (serialWrite(s, strlen(s)));
 }
 
-static void	pf_putnbr_base(unsigned long nb, char *base, size_t *len)
+static inline void	pf_putnbr_base(unsigned long nb, const char *base, size_t *len, size_t baseLen)
 {
-	size_t	base_len;
-
-	base_len = strlen(base);
-	if (nb >= base_len)
+	if (baseLen < 2)
+		return;
+	if (nb >= baseLen)
 	{
-		pf_putnbr_base(nb / base_len, base, len);
+		pf_putnbr_base(nb / baseLen, base, len, baseLen);
 	}
-	*len += pf_putchar(base[nb % base_len]);
+	*len += pf_putchar(base[nb % baseLen]);
 }
 
 void	pf_convert_base(unsigned long nb, char index, size_t *len)
 {
-	char	*base[3];
-
-	base[0] = "0123456789";
-	base[1] = "0123456789abcdef";
-	base[2] = "0123456789ABCDEF";
-	if (index == 'u')
-		pf_putnbr_base(nb, base[0], len);
-	else if (index == 'x')
-		pf_putnbr_base(nb, base[1], len);
-	else if (index == 'X')
-		pf_putnbr_base(nb, base[2], len);
-	else if (index == 'p')
+	switch (index)
 	{
-		if (!nb)
-		{
-			*len += serialWrite("(nil)", 5);
-			return ;
+		case 'u': {
+			pf_putnbr_base(nb, DECBASE, len, BASELEN(DECBASE));
+			break;
 		}
-		*len += serialWrite("0x", 2);
-		pf_putnbr_base(nb, base[1], len);
+		case 'x': {
+			pf_putnbr_base(nb, HEXBASE, len, BASELEN(HEXBASE));
+			break;
+		}
+		case 'X': {
+			pf_putnbr_base(nb, HEXBASEUPPER, len, BASELEN(HEXBASEUPPER));
+			break;
+		} 
+		case 'p': {
+			if (!nb)
+			{
+				*len += serialWrite("(nil)", 5);
+				return ;
+			}
+			*len += serialWrite("0x", 2);
+			pf_putnbr_base(nb, HEXBASE, len, BASELEN(HEXBASE));
+		}
 	}
 }

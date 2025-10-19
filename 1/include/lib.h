@@ -6,7 +6,9 @@
 #include <stdarg.h>
 #include "serialDebug.h"
 
-
+#define bool unsigned int
+#define true 1
+#define false 0
 #define BASE "0123456789ABCDEF"
 
 // i386 port I/O
