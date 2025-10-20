@@ -24,8 +24,8 @@ magic_fields_end:
 ; 	dw 5									; type: framebuffer
 ; 	dw 0
 ; 	dd 20									; size
-; 	dd 640
-; 	dd 480
+; 	dd 160
+; 	dd 50
 ; 	dd 32
 
 

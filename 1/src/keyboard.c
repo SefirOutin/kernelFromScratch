@@ -56,10 +56,14 @@ void	initPs2()
 
 	outb(PS2StatusCmd, 0x20);				// Tell to read controller config
 	controllerConf = getChar();					// read controller config
+	printf("conf byte1: %b\n", controllerConf);
 	controllerConf &= ~(bit(6) | bit(4) | bit(0));
 	outb(PS2StatusCmd, 0x60);				// Tell to write controller config
 	sendChar(controllerConf);
 	
+	outb(PS2StatusCmd, 0x20);				// Tell to read controller config
+	printf("conf byte1: %b\n", getChar());
+
 	outb(PS2StatusCmd, 0xAA);				// Perform controller self test
 	printf("con test: %s\n", getChar() == 0x55 ? "pass" : "fail");	// check result
 	
@@ -68,7 +72,10 @@ void	initPs2()
 	if (!(getChar() & bit(5)))				// bit 5 must be clear
 	{
 		dualChannel = true;
-		// outb(PS2StatusCmd, 0xA7);				// Disable 2nd device if it exists
+		outb(PS2StatusCmd, 0xA7);			// Disable 2nd device if it exists
+		controllerConf &= ~(bit(5) | bit(1));
+		outb(PS2StatusCmd, 0x60);				// Tell to write controller config
+		sendChar(controllerConf);
 	}
 	printf("dual test: %s\n", dualChannel ? "dual" : "mono");
 	
@@ -79,19 +86,35 @@ void	initPs2()
 		sendChar(0xFF);
 		int i = 0;
 		while (i++ < 3)
-			printf("getChar: %X ", getChar());
+			printf("1st getChar: %X ", getChar());
 		printf("\n");
 	}
 	if (dualChannel)
 	{
+		// inb(PS2Data);
 		outb(PS2StatusCmd, 0xA9);				// Test PS/2 1st port
-		if (getChar() == 0)
+		uint8_t c = getChar();
+		printf("c: %X\n", c);
+		if (c == 0)
 		{
 			outb(PS2StatusCmd, 0xA8);			// Enable PS/2 2nd port
 			outb(PS2StatusCmd, 0xD4);			// Enable write to 2nd port
 			sendChar(0xFF);
-			
+			int i = 0;
+			while (i++ < 2)
+				printf("2nd getChar: %X ", getChar());
+			printf("\n");
 		}	
 		
 	}
+	inb(PS2Data);
+
+	sendChar(0xF0);				// get/set scan code set
+	printf("ACK: %X\n", getChar());
+	sendChar(0x00);				// get scan code set
+	printf("ACK: %X\n", getChar());
+	printf("code set: %X\n", getChar());
+
+	outb(PS2StatusCmd, 0x20);				// Tell to read controller config
+	printf("final conf: %X\n", getChar());
 }

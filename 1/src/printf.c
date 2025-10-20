@@ -1,5 +1,6 @@
 #include "lib.h"
 
+#define BINBASE "01"
 #define DECBASE "0123456789"
 #define HEXBASE "0123456789abcdef"
 #define HEXBASEUPPER "0123456789ABCDEF"
@@ -36,7 +37,7 @@ static int	check_format(const char *str)
 		if (strchr(str, '%'))
 		{
 			str = strchr(str, '%') + 1;
-			if (!strchr("%cspdiuxX", *str))
+			if (!strchr("%cspdiuxXb", *str))
 				return (0);
 		}
 		str++;
@@ -64,6 +65,8 @@ static void	oula(const char *str, va_list arg, size_t *len)
 				pf_convert_base(va_arg(arg, unsigned int), 'x', len);
 			else if (*str == 'X')
 				pf_convert_base(va_arg(arg, unsigned int), 'X', len);
+			else if (*str == 'b')
+				pf_convert_base(va_arg(arg, unsigned int), 'b', len);
 			else if (*str == '%')
 				*len += pf_putchar(*str);
 		}
@@ -136,6 +139,11 @@ void	pf_convert_base(unsigned long nb, char index, size_t *len)
 			}
 			*len += serialWrite("0x", 2);
 			pf_putnbr_base(nb, HEXBASE, len, BASELEN(HEXBASE));
+			break;
+		}
+		case 'b': {
+			pf_putnbr_base(nb, BINBASE, len, BASELEN(BINBASE));
+			break;
 		}
 	}
 }

@@ -64,17 +64,17 @@ void updateCursor(tty *term, int x, int y)
 
 int write(tty *term, const char *str, uint32_t len)
 {
-    uint32_t j = 0;
-    uint32_t cursor = term->yPos * VgaWidth + term->xPos;
+    int i = 0;
+    unsigned int cursor = term->yPos * VgaWidth + term->xPos;
 
-    while(j < len)
+    while(i < len)
     {
-        vga[cursor + j] = str[j] | 0xa << 8;
-        j++;
+        vga[cursor + i] = str[i] | 0xa << 8;
+        i++;
     }
-    cursor += j;
+    cursor += i;
     term->updateCursor(term, cursor % VgaWidth, cursor / VgaWidth);
-    return (j);
+    return (i);
 }
 
 void    initTerm(tty *term)
@@ -85,51 +85,83 @@ void    initTerm(tty *term)
     term->write = write;
 }
 
-// 01110001
-// 00100000
-
 int kernel_main(uint32_t *s)
 {
+
+#define PS2_SET2_TABLE_SIZE 256
+const uint8_t ps2_set2_to_ascii[PS2_SET2_TABLE_SIZE] = {
+    // 0x00-0x0F
+    [0x00] = 0,     [0x01] = 0,     [0x03] = 0,     // F9, unused, F5
+    [0x04] = 0,     [0x05] = 0,     [0x06] = 0,     // F3, F1, F2
+    [0x07] = 0,     [0x09] = 0,     [0x0A] = 0,     // F12, F10, F8
+    [0x0B] = 0,     [0x0C] = 0,     [0x0D] = '\t',  // F6, F4, Tab
+    [0x0E] = '`',   [0x0F] = 0,                     // `
+
+    // 0x10-0x1F
+    [0x11] = 0,     [0x12] = 0,     [0x14] = 0,     // Alt, L Shift, L Ctrl
+    [0x15] = 'q',   [0x16] = '1',   [0x1A] = 'z',   // q, 1, z
+    [0x1B] = 's',   [0x1C] = 'a',   [0x1D] = 'w',   // s, a, w
+    [0x1E] = '2',   [0x1F] = 0,                     // 2
+
+    // 0x20-0x2F
+    [0x21] = 'c',   [0x22] = 'x',   [0x23] = 'd',   // c, x, d
+    [0x24] = 'e',   [0x25] = '4',   [0x26] = '3',   // e, 4, 3
+    [0x27] = 0,     [0x2A] = 'v',   [0x2B] = 'f',   // unused, v, f
+    [0x2C] = 't',   [0x2D] = 'r',   [0x2E] = '5',   // t, r, 5
+
+    // 0x30-0x3F
+    [0x31] = 'n',   [0x32] = 'b',   [0x33] = 'h',   // n, b, h
+    [0x34] = 'g',   [0x35] = 'y',   [0x36] = '6',   // g, y, 6
+    [0x3A] = 'm',   [0x3B] = 'j',   [0x3C] = 'u',   // m, j, u
+    [0x3D] = '7',   [0x3E] = '8',   [0x3F] = 0,     // 7, 8
+
+    // 0x40-0x4F
+    [0x41] = ',',   [0x42] = 'k',   [0x43] = 'i',   // ,, k, i
+    [0x44] = 'o',   [0x45] = '0',   [0x46] = '9',   // o, 0, 9
+    [0x49] = '.',   [0x4A] = '/',   [0x4B] = 'l',   // ., /, l
+    [0x4C] = ';',   [0x4D] = 'p',   [0x4E] = '-',   // ;, p, -
+    [0x4F] = 0,                                 // unused
+
+    // 0x50-0x5F
+    [0x52] = '\'',  [0x54] = '[',   [0x55] = '=',   // ', [, =
+    [0x5A] = '\n',  [0x5B] = ']',   [0x5D] = '\\',  // Enter, ], \
+    [0x5F] = 0,                                 // unused
+
+    // 0x60-0x6F
+    [0x66] = '\b',  [0x69] = 0,     [0x6B] = 0,     // Backspace, End, Left
+    [0x6C] = 0,                                 // Home
+    [0x6F] = 0,                                 // unused
+
+    // 0x70-0x7F
+    [0x70] = 0,     [0x71] = 0,     [0x72] = 0,     // Ins, Del, Down
+    [0x74] = 0,     [0x75] = 0,     [0x76] = 27,    // Right, Up, Esc (ASCII 27)
+    [0x77] = 0,     [0x79] = 0,     [0x7A] = 0,     // Num Lock, +, PgDn
+    [0x7B] = 0,     [0x7C] = 0,     [0x7D] = 0,     // -, *, PgUp
+    [0x7E] = 0,     [0x7F] = 0,                 // Scroll Lock, unused
+
+    // 0x80-0xFF: All unused
+    // ...
+};
     tty term;
     initTerm(&term);
 	initPs2();
-    printf("x: %d y: %d\n", term.xPos, term.yPos);
-    term.write(&term, "oui", 3);
-    term.write(&term, "oui", 3);
-    term.write(&term, "oui", 3);
-    term.write(&term, "oui", 3);
-    term.write(&term, "oui", 3);
-    term.write(&term, "oui", 3);
-    term.write(&term, "oui", 3);
-    term.write(&term, "oui", 3);
-    term.write(&term, "oui", 3);
-    term.write(&term, "oui", 3);
-    term.write(&term, "oui", 3);
-    term.write(&term, "oui", 3);
-    term.write(&term, "oui", 3);
-	// inb(PS2Data);
-	int i = 0;
-	// while (i < 512)
-	// {
-	// 	printf("0x%X ",  atkbd_set2_keycode[i]);
-	// 	if (!(i++ % 15))
-	// 		printf("\n");
 
-	// }
-	uint8_t chart = getChar();
-	printf("char: 0x%X\n", chart);
-	term.write(&term, &chart, 1);
-    while (1);
-    // term.updateCursor(&term, 1, 0);
-    // char *vga = (char *)0xB8000;  // adresse mémoire VGA texte
-    // vga[0] = '4';                 // premier caractère
-    // vga[1] = 0x07;                // couleur gris clair sur fond noir
-    // vga[2] = '2';                 // second caractère
-    // vga[3] = 0x07;                // même couleur
-    // outb(0x3D4, 0x0A);
-    // outb(0x3D5, 0x20);
-    // enable_cursor(14, 15);
-    // update_cursor(50, 1);
-    while (1);                     // boucle infinie pour garder l’écran affiché
-        
+    printf("x: %d y: %d\n", term.xPos, term.yPos);
+    printf("ccccccccccccccccccccccccccc: %c\n", PS2Set2Table[0x15]);
+    term.write(&term, "KERNEL", 6);
+    term.updateCursor(&term, 0, 1);
+    unsigned char chart;
+    while (1)
+    {
+        chart = getChar();
+        printf("char: %X ", chart);
+        if (chart == 0xF0)
+            { getChar(); printf("\n"); continue;}
+        if (chart > 0x84)
+            {printf("\n"); continue;}
+        chart = ps2_set2_to_ascii[chart];
+        printf("trans char: 0x%X\n", chart);
+        if (chart)
+            term.write(&term, &chart, 1);
+    }
 }
