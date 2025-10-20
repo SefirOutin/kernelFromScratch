@@ -1,4 +1,5 @@
 #include "vga_console.h"
+#include "lib.h"
 
 static void vga_putchar(struct vga_console *self, char c);
 static void vga_clear(struct vga_console *self);
