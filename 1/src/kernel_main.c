@@ -146,8 +146,6 @@ const uint8_t ps2_set2_to_ascii[PS2_SET2_TABLE_SIZE] = {
     initTerm(&term);
 	initPs2();
 
-    printf("x: %d y: %d\n", term.xPos, term.yPos);
-    printf("ccccccccccccccccccccccccccc: %c\n", PS2Set2Table[0x15]);
     term.write(&term, "KERNEL", 6);
     term.updateCursor(&term, 0, 1);
     unsigned char chart;

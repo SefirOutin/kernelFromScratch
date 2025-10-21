@@ -46,7 +46,6 @@ static inline void	sendChar(uint8_t c)
 
 void	initPs2()
 {
-	uint8_t				response1, response2, deviceId;
 	bool				dualChannel = false;
 	volatile uint8_t	controllerConf;
 	
@@ -56,13 +55,12 @@ void	initPs2()
 
 	outb(PS2StatusCmd, 0x20);				// Tell to read controller config
 	controllerConf = getChar();					// read controller config
-	printf("conf byte1: %b\n", controllerConf);
-	controllerConf &= ~(bit(6) | bit(4) | bit(0));
+	controllerConf &= ~(bit(6) | bit(4) | bit(0));	// 1st port: disable int, translation, enable port clock
 	outb(PS2StatusCmd, 0x60);				// Tell to write controller config
-	sendChar(controllerConf);
+	sendChar(controllerConf);				// Send new config
 	
-	outb(PS2StatusCmd, 0x20);				// Tell to read controller config
-	printf("conf byte1: %b\n", getChar());
+	// outb(PS2StatusCmd, 0x20);				// Tell to read controller config
+	// printf("conf byte1: %b\n", getChar());
 
 	outb(PS2StatusCmd, 0xAA);				// Perform controller self test
 	printf("con test: %s\n", getChar() == 0x55 ? "pass" : "fail");	// check result
@@ -71,50 +69,75 @@ void	initPs2()
 	outb(PS2StatusCmd, 0x20);				// Tell to read controller config
 	if (!(getChar() & bit(5)))				// bit 5 must be clear
 	{
+		printf("dual test: %s\n", dualChannel ? "dual" : "mono");
 		dualChannel = true;
 		outb(PS2StatusCmd, 0xA7);			// Disable 2nd device if it exists
-		controllerConf &= ~(bit(5) | bit(1));
+		controllerConf &= ~(bit(5) | bit(1));		// 2nd port: disable int, enable port clock
 		outb(PS2StatusCmd, 0x60);				// Tell to write controller config
 		sendChar(controllerConf);
 	}
-	printf("dual test: %s\n", dualChannel ? "dual" : "mono");
 	
 	outb(PS2StatusCmd, 0xAB);				// Test PS/2 1st port
 	if (getChar() == 0)
 	{
 		outb(PS2StatusCmd, 0xAE);			// Enable PS/2 1st port
-		sendChar(0xFF);
+		sendChar(0xFF);						// reset device
 		int i = 0;
 		while (i++ < 3)
 			printf("1st getChar: %X ", getChar());
 		printf("\n");
+		sendChar(0xF5);							// disable scan 1st dev
+		getChar();								// ACK
 	}
 	if (dualChannel)
 	{
-		// inb(PS2Data);
-		outb(PS2StatusCmd, 0xA9);				// Test PS/2 1st port
-		uint8_t c = getChar();
-		printf("c: %X\n", c);
-		if (c == 0)
+		outb(PS2StatusCmd, 0xA9);				// Test PS/2 2nd port
+		if (getChar() == 0)
 		{
 			outb(PS2StatusCmd, 0xA8);			// Enable PS/2 2nd port
 			outb(PS2StatusCmd, 0xD4);			// Enable write to 2nd port
-			sendChar(0xFF);
+			sendChar(0xFF);						// reset device
 			int i = 0;
-			while (i++ < 2)
+			while (i++ < 3)
 				printf("2nd getChar: %X ", getChar());
 			printf("\n");
-		}	
+		}
+		outb(PS2StatusCmd, 0xD4);				
+		sendChar(0xF5);							// Disable scan 2nd dev	
+		getChar();								// ACK
 		
 	}
-	inb(PS2Data);
+	// sendChar(0xF0);				// get-set scancode set CMD
+	// printf("ACK scancodeSet: %X\n", getChar());
+	// sendChar(0x00);				// get scan code set
+	// printf("ACK: %X\n", getChar());
+	// printf("code set: %X\n", getChar());
 
-	sendChar(0xF0);				// get/set scan code set
-	printf("ACK: %X\n", getChar());
-	sendChar(0x00);				// get scan code set
-	printf("ACK: %X\n", getChar());
-	printf("code set: %X\n", getChar());
+	// First Device ID
 
-	outb(PS2StatusCmd, 0x20);				// Tell to read controller config
-	printf("final conf: %X\n", getChar());
+	sendChar(0xF2);				// identify yourself
+	printf("ACK identity: %X\n", getChar());
+	uint8_t c = getChar();
+	if (c >= 0xAB)
+		printf("dev1 ID: %X %X\n", c, getChar());
+	else
+		printf("dev1 ID: %X\n", c);
+	sendChar(0xF4);				// enable scanning
+
+	// Second Device ID
+
+	outb(PS2StatusCmd, 0xD4);
+	sendChar(0xF2);				// identify yourself
+	printf("ACK identity: %X\n", getChar());
+	uint8_t c1 = getChar();
+	if (c1 >= 0xAB)
+		printf("dev2 ID: %X %X\n", c1, getChar());
+	else
+		printf("dev2 ID: %X\n", c1);
+	
+	
+	sendChar(0xF4);				// enable scan 1st dev
+	outb(PS2StatusCmd, 0xD4);
+	sendChar(0xF4);				// enable scan 2nd dev
+
 }
