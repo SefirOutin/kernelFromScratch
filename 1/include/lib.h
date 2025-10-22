@@ -26,6 +26,7 @@ static inline unsigned char inb(unsigned short port)
 size_t	strlen(const char *str);
 char	*strchr(const char *s, int c);
 void	*memset(void *p, int v, size_t size);
+bool	is_alpha(char c);
 
 
 int	printf(const char *str, ...);

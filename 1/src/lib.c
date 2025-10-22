@@ -32,3 +32,8 @@ void	*memset(void *p, int v, size_t size)
 		*s++ = (unsigned char)v;
 	return (p);
 }
+
+bool	is_alpha(char c)
+{
+	return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
+}

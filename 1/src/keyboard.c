@@ -1,32 +1,37 @@
 #include "lib.h"
+#include <keyboard.h>
 
-#define PS2Data 0x60
-#define PS2StatusCmd 0x64
-#define bit(x) (1U << (x))
+static bool	isLeftShiftPressed = false, isRightShiftPressed = false, isCapsLockOn = false;
 
-#define ATKBD_KEYMAP_SIZE       512
-
-static const unsigned short atkbd_set2_keycode[ATKBD_KEYMAP_SIZE] = {
-        0, 67, 65, 63, 61, 59, 60, 88,  0, 68, 66, 64, 62, 15, 41,117,
-        0, 56, 42, 93, 29, 16,  2,  0,  0,  0, 44, 31, 30, 17,  3,  0,
-        0, 46, 45, 32, 18,  5,  4, 95,  0, 57, 47, 33, 20, 19,  6,183,
-        0, 49, 48, 35, 34, 21,  7,184,  0,  0, 50, 36, 22,  8,  9,185,
-        0, 51, 37, 23, 24, 11, 10,  0,  0, 52, 53, 38, 39, 25, 12,  0,
-        0, 89, 40,  0, 26, 13,  0,  0, 58, 54, 28, 27,  0, 43,  0, 85,
-        0, 86, 91, 90, 92,  0, 14, 94,  0, 79,124, 75, 71,121,  0,  0,
-       82, 83, 80, 76, 77, 72,  1, 69, 87, 78, 81, 74, 55, 73, 70, 99,
-
-        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-      217,100,255,  0, 97,165,  0,  0,156,  0,  0,  0,  0,  0,  0,125,
-      173,114,  0,113,  0,  0,  0,126,128,  0,  0,140,  0,  0,  0,127,
-      159,  0,115,  0,164,  0,  0,116,158,  0,172,166,  0,  0,  0,142,
-      157,  0,  0,  0,  0,  0,  0,  0,155,  0, 98,  0,  0,163,  0,  0,
-       226,  0,  0,  0,  0,  0,  0,  0,  0,255, 96,  0,  0,  0,143,  0,
-         0,  0,  0,  0,  0,  0,  0,  0,  0,107,  0,105,102,  0,  0,112,
-       110,111,108,112,106,103,  0,119,  0,118,109,  0, 99,104,119,  0,
- 
-        0,  0,  0, 65, 99,
+#define PS2_SET2_TABLE_SIZE 132
+const uint8_t ps2_set2_to_ascii[PS2_SET2_TABLE_SIZE] = {
+    [0x0D] = '\t',  [0x0E] = '`',
+    [0x15] = 'q',   [0x16] = '1',
+    [0x1A] = 'z',   [0x1B] = 's',   [0x1C] = 'a',   [0x1D] = 'w',   [0x1E] = '2',
+    [0x21] = 'c',   [0x22] = 'x',   [0x23] = 'd',   [0x24] = 'e',   [0x25] = '4',   [0x26] = '3',
+    [0x2A] = 'v',   [0x2B] = 'f',   [0x2C] = 't',   [0x2D] = 'r',   [0x2E] = '5',
+    [0x31] = 'n',   [0x32] = 'b',   [0x33] = 'h',   [0x34] = 'g',   [0x35] = 'y',   [0x36] = '6',
+    [0x3A] = 'm',   [0x3B] = 'j',   [0x3C] = 'u',   [0x3D] = '7',   [0x3E] = '8',
+    [0x41] = ',',   [0x42] = 'k',   [0x43] = 'i',   [0x44] = 'o',   [0x45] = '0',   [0x46] = '9',
+    [0x49] = '.',   [0x4A] = '/',   [0x4B] = 'l',   [0x4C] = ';',   [0x4D] = 'p',   [0x4E] = '-',
+    [0x52] = '\'',  [0x54] = '[',   [0x55] = '=',   [0x5A] = '\n',  [0x5B] = ']',   [0x5D] = '\\',
+    [0x66] = '\b',  [0x76] = 27 // ESC
 };
+
+const uint8_t ps2_set2_to_ascii_shift[PS2_SET2_TABLE_SIZE] = {
+    [0x0E] = '~',
+    [0x15] = 'Q',   [0x16] = '!',
+    [0x1A] = 'Z',   [0x1B] = 'S',   [0x1C] = 'A',   [0x1D] = 'W',   [0x1E] = '@',
+    [0x21] = 'C',   [0x22] = 'X',   [0x23] = 'D',   [0x24] = 'E',   [0x25] = '$',   [0x26] = '#',
+    [0x2A] = 'V',   [0x2B] = 'F',   [0x2C] = 'T',   [0x2D] = 'R',   [0x2E] = '%',
+    [0x31] = 'N',   [0x32] = 'B',   [0x33] = 'H',   [0x34] = 'G',   [0x35] = 'Y',   [0x36] = '^',
+    [0x3A] = 'M',   [0x3B] = 'J',   [0x3C] = 'U',   [0x3D] = '&',   [0x3E] = '*',
+    [0x41] = '<',   [0x42] = 'K',   [0x43] = 'I',   [0x44] = 'O',   [0x45] = ')',   [0x46] = '(',
+    [0x49] = '>',   [0x4A] = '?',   [0x4B] = 'L',   [0x4C] = ':',   [0x4D] = 'P',   [0x4E] = '_',
+    [0x52] = '"',   [0x54] = '{',   [0x55] = '+',   [0x5A] = '\n',  [0x5B] = '}',   [0x5D] = '|',
+    [0x66] = '\b',  [0x76] = 27
+};
+
 
 uint8_t	getChar()
 {
@@ -83,7 +88,7 @@ void	initPs2()
 		outb(PS2StatusCmd, 0xAE);			// Enable PS/2 1st port
 		sendChar(0xFF);						// reset device
 		int i = 0;
-		while (i++ < 3)
+		while (i++ < 2)
 			printf("1st getChar: %X ", getChar());
 		printf("\n");
 		sendChar(0xF5);							// disable scan 1st dev
@@ -98,7 +103,7 @@ void	initPs2()
 			outb(PS2StatusCmd, 0xD4);			// Enable write to 2nd port
 			sendChar(0xFF);						// reset device
 			int i = 0;
-			while (i++ < 3)
+			while (i++ < 2)
 				printf("2nd getChar: %X ", getChar());
 			printf("\n");
 		}
@@ -140,4 +145,54 @@ void	initPs2()
 	outb(PS2StatusCmd, 0xD4);
 	sendChar(0xF4);				// enable scan 2nd dev
 
+}
+
+char translate(unsigned char scancode, bool uppercase, bool capsLock)
+{
+	char character;
+
+	if (scancode > 131 || !scancode)
+		return (0);
+
+	if (uppercase)
+		character = ps2_set2_to_ascii_shift[scancode];
+	else
+		character = ps2_set2_to_ascii[scancode];
+
+	if (capsLock && is_alpha(character))
+		return (character ^ bit(5));
+	return (character);
+}
+
+char handle_keyboard_scancode(unsigned char scancode)
+{
+	bool isReleased = false;
+
+	if (scancode == KEYRELEASED0) {
+		isReleased = true;
+		scancode = getChar();
+	}
+	if (scancode ==  KEYRELEASED1) {
+		isReleased = true;
+		scancode = getChar();
+	}
+	switch (scancode)
+	{
+		case LEFTSHIFT:
+			isLeftShiftPressed = isReleased ? false : true;
+			return (0);
+		case RIGHTSHIFT:
+			isRightShiftPressed = isReleased ? false : true;
+			return (0);
+		case SPACEBAR:
+			return (' ');
+		case BACKSPACE:
+			return (isReleased ? 0 : '\b');
+		case CAPSLOCK:
+			isCapsLockOn = isReleased ? isCapsLockOn : isCapsLockOn ^ bit(0);
+
+	}
+	if (isReleased)
+		return (0);
+	return (translate(scancode, isLeftShiftPressed | isRightShiftPressed, isCapsLockOn));
 }
