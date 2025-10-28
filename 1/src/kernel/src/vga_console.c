@@ -7,7 +7,7 @@ static void vga_set_color(struct vga_console *self, k_uint8_t color);
 static void vga_set_cursor(struct vga_console *self, k_uint8_t row, k_uint8_t col);
 static void vga_scroll(struct vga_console *self);
 
-void vga_console_init(struct vga_console *self)
+void vga_console_constructor(struct vga_console *self)
 {
     self->buf = (volatile k_uint16_t *)VGA_ADDR;
     self->color = 0x07;
@@ -27,11 +27,6 @@ void vga_console_init(struct vga_console *self)
 static inline k_uint16_t vga_entry(char c, k_uint8_t color)
 {
     return (k_uint16_t)c | ((k_uint16_t)color << 8);
-}
-
-static inline void outb(unsigned short port, unsigned char val)
-{
-    __asm__ volatile("outb %0, %1" : : "a"(val), "Nd"(port));
 }
 
 static void vga_putchar(struct vga_console *self, char c)

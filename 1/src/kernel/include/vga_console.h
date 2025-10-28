@@ -11,9 +11,9 @@ struct vga_console
 {
     /* Attributs */
     volatile k_uint16_t *buf;
-    k_uint8_t color;
-    char row;
-    char col;
+    k_uint8_t           color;
+    char                row;
+    char                col;
 
     /* Méthodes "internes" (pointeurs de fonctions) */
     void (*putchar)(struct vga_console *self, char c);
@@ -24,6 +24,6 @@ struct vga_console
 };
 
 /* Fonctions d'initialisation/destruction */
-void vga_console_init(struct vga_console *self);
+void vga_console_constructor(struct vga_console *self);
 
 #endif /* _VGA_CONSOLE_H */
