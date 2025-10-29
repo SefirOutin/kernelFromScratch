@@ -17,8 +17,8 @@ void kernel(unsigned long magic, unsigned long addr)
 
 	vga_console_constructor(&vga);
 	serialInit();
-	ps2_driver_constructor(&ps2);
-	ps2.init(&ps2);
+	ps2_driver_constructor(&ps2);				// here we assume ps2 controller always exists
+	ps2.init(&ps2);						
 
 	vga.putchar(&vga, '4');
 	vga.putchar(&vga, '2');

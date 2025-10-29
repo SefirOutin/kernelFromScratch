@@ -9,10 +9,9 @@ static void vga_scroll(struct vga_console *self);
 
 void vga_console_constructor(struct vga_console *self)
 {
+    memset(self, 0, sizeof(struct vga_console));
     self->buf = (volatile k_uint16_t *)VGA_ADDR;
     self->color = 0x07;
-    self->row = 0;
-    self->col = 0;
 
     self->putchar = vga_putchar;
     self->clear = vga_clear;

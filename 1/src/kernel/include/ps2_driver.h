@@ -14,11 +14,12 @@ struct ps2_driver
     k_uint16_t      data_port;
     k_uint16_t      status_port;
     struct keyboard keyboard;
+    int             keyboard_port;
 
-    void        (*init)(struct ps2_driver *self);
+    int         (*init)(struct ps2_driver *self);
 
     k_uint8_t   (*read_byte)(struct ps2_driver *self);
-    bool        (*has_data)(struct ps2_driver *self);
+    // bool        (*has_data)(struct ps2_driver *self);
     void        (*send_byte)(struct ps2_driver *self, k_uint8_t c);
 };
 

@@ -15,10 +15,10 @@ struct ps2_driver;
 
 struct keyboard
 {
-	bool		_isLeftShiftPressed, _isRightShiftPressed, _isCapsLockOn;
-	int 		_set;
-	k_uint8_t	*_set_table;
-	k_uint8_t	*_shifted_set_table;
+	bool			_isLeftShiftPressed, _isRightShiftPressed, _isCapsLockOn;
+	int 			_set;
+	const k_uint8_t	*_set_table;
+	const k_uint8_t	*_shifted_set_table;
 
 	char	(*handle_scancode)(struct keyboard *self, struct ps2_driver *ps2, k_uint8_t scancode);
 	char	(*translate)(struct keyboard *self, k_uint8_t scancode);

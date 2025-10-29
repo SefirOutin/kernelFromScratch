@@ -6,7 +6,7 @@ char handle_keyboard_scancode(struct keyboard *self, struct ps2_driver *ps2_driv
 
 
 #define PS2_SET2_TABLE_SIZE 132
-const k_uint8_t ps2_set2_to_ascii[PS2_SET2_TABLE_SIZE] = {
+static const k_uint8_t ps2_set2_to_ascii[PS2_SET2_TABLE_SIZE] = {
     [0x0D] = '\t',  [0x0E] = '`',
     [0x15] = 'q',   [0x16] = '1',
     [0x1A] = 'z',   [0x1B] = 's',   [0x1C] = 'a',   [0x1D] = 'w',   [0x1E] = '2',
@@ -20,7 +20,7 @@ const k_uint8_t ps2_set2_to_ascii[PS2_SET2_TABLE_SIZE] = {
     [0x66] = '\b',  [0x76] = 27 // ESC
 };
 
-const k_uint8_t ps2_set2_to_ascii_shift[PS2_SET2_TABLE_SIZE] = {
+static const k_uint8_t ps2_set2_to_ascii_shift[PS2_SET2_TABLE_SIZE] = {
     [0x0E] = '~',
     [0x15] = 'Q',   [0x16] = '!',
     [0x1A] = 'Z',   [0x1B] = 'S',   [0x1C] = 'A',   [0x1D] = 'W',   [0x1E] = '@',
