@@ -1,5 +1,5 @@
-#ifndef LIB_H
-#define LIB_H
+#ifndef _LIB_H
+#define _LIB_H
 
 #include <stdarg.h>
 
@@ -22,8 +22,11 @@ static inline unsigned char inb(unsigned short port)
 
 size_t	strlen(const char *str);
 char	*strchr(const char *s, int c);
+bool	isalpha(char c);
+int     isprint(int c);
+
 void	*memset(void *p, int v, size_t size);
-bool	is_alpha(char c);
+void	*memcpy(void *dest, const void *src, size_t size);
 
 
 int     printf(const char *str, ...);

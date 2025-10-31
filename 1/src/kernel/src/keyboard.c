@@ -1,5 +1,6 @@
 #include "keyboard.h"
 #include "ps2_driver.h"
+#include "lib.h"
 
 char translate(struct keyboard *self, k_uint8_t scancode);
 char handle_keyboard_scancode(struct keyboard *self, struct ps2_driver *ps2_driver, k_uint8_t scancode);
@@ -55,45 +56,52 @@ char translate(struct keyboard *self, k_uint8_t scancode)
 	if (scancode > 131 || !scancode)
 		return (0);
 
-	if (self->_isLeftShiftPressed | self->_isRightShiftPressed)
+	if (self->_is_left_shift_pressed | self->_is_right_shift_pressed)
 		character = self->_shifted_set_table[scancode];
 	else
 		character = self->_set_table[scancode];
 
-	if (self->_isCapsLockOn && is_alpha(character))
+	if (self->_is_caps_lock_on && isalpha(character))
 		return (character ^ bit(5));
 	return (character);
 }
 
 char handle_keyboard_scancode(struct keyboard *self, struct ps2_driver *ps2_driver, k_uint8_t scancode)
 {
-	bool isReleased = false;
+	bool is_released = false;
 
 	if (scancode == KEYRELEASED0) {
-		isReleased = true;
+		is_released = true;
 		scancode = ps2_driver->read_byte(ps2_driver);
 	}
 	if (scancode ==  KEYRELEASED1) {
-		isReleased = true;
+		is_released = true;
 		scancode = ps2_driver->read_byte(ps2_driver);
 	}
 	switch (scancode)
 	{
 		case LEFTSHIFT:
-			self->_isLeftShiftPressed = isReleased ? false : true;
+			self->_is_left_shift_pressed ^= bit(0);
 			return (0);
 		case RIGHTSHIFT:
-			self->_isRightShiftPressed = isReleased ? false : true;
+			self->_is_right_shift_pressed ^= bit(0);
+			return (0);
+		case LEFTALT:
+			self->_is_alt_pressed ^= bit(0);
 			return (0);
 		case SPACEBAR:
 			return (' ');
 		case BACKSPACE:
-			return (isReleased ? 0 : '\b');
+			return (is_released ? 0 : '\b');
 		case CAPSLOCK:
-			self->_isCapsLockOn = isReleased ? self->_isCapsLockOn : self->_isCapsLockOn ^ bit(0);
+			self->_is_caps_lock_on = is_released ? self->_is_caps_lock_on : self->_is_caps_lock_on ^ bit(0);
 
 	}
-	if (isReleased)
+	if (is_released)
 		return (0);
+
+	if (self->_is_alt_pressed && (scancode == 0x16 || scancode == 0x1E))
+		return ('0' - self->translate(self, scancode));
+
 	return (self->translate(self, scancode));
 }

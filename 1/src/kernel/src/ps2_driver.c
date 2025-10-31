@@ -18,7 +18,7 @@ void ps2_driver_constructor(struct ps2_driver *self)
 
     self->init = init_ps2_controller;
     self->read_byte = read_byte_ps2;
-    // self->has_data = has_data_ps2;
+    self->has_data = has_data_ps2;
     self->send_byte = send_byte_ps2;
 }
 
@@ -36,7 +36,7 @@ static inline void send_byte_ps2(struct ps2_driver *self, k_uint8_t c)
 
 static inline k_uint8_t read_byte_ps2(struct ps2_driver *self)
 {
-    while (!has_data_ps2(self));
+    while (!self->has_data(self));
 
     return inb(self->data_port);
 }
@@ -45,13 +45,14 @@ static int read_byte_ps2_timeout(struct ps2_driver *self)
 {
     k_uint32_t timeout = TIMEOUT;
 
-    while (!has_data_ps2(self) && timeout--);
+    while (!self->has_data(self) && timeout--);
 
     if (timeout == 0)
         return (-1);
 
     return (inb(self->data_port));
 }
+
 /*
 	Made by following OSDev wiki part for 
 	Initialising the PS/2 Controller (Intel 8042)

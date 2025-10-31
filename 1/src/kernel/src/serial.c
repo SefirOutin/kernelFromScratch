@@ -1,6 +1,6 @@
 #include "serial.h"
 
-void serialInit(void)
+void serial_init(void)
 {
     outb(COM1 + 1, 0x00);      // IER: disable interrupts
     outb(COM1 + 3, 0x80);      // LCR: enable DLAB
@@ -11,26 +11,26 @@ void serialInit(void)
     outb(COM1 + 4, 0x0B);      // MCR: OUT2|RTS|DTR (OUT2 enables IRQ on PC hw; harmless here)
 }
 
-int serialCanTx(void)
+int serial_can_tx(void)
 {
     // LSR bit 5 (0x20) = THR empty
     return inb(COM1 + 5) & 0x20;
 }
 
-k_uint8_t serialPutc(char c)
+k_uint8_t serial_putchar(char c)
 {
-    while (!serialCanTx()) { /* spin */ }
+    while (!serial_can_tx()) { /* spin */ }
     outb(COM1 + 0, (unsigned char)c);
     return (1);
 }
 
-unsigned int serialWrite(const char* s, unsigned int len)
+unsigned int serial_write(const char* s, unsigned int len)
 {
     size_t i = 0;
     for (; *s; ++s, i++)
     {
-        if (*s == '\n') serialPutc('\r'); // CRLF for comfy terminals
-        serialPutc(*s);
+        if (*s == '\n') serial_putchar('\r'); // CRLF for comfy terminals
+        serial_putchar(*s);
     }
     return (i);
 }
