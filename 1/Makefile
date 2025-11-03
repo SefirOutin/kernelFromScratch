@@ -1,62 +1,73 @@
-# Define directories and files locations
-OBJDIR = obj
-ISODIR = iso
-BOOTDIR = $(ISODIR)/boot
-GRUBDIR = $(BOOTDIR)/grub
-LINKER = linker.ld
-KERNEL_ELF = $(BOOTDIR)/kernel.elf
-ISO = k.iso
-GRUB_CFG = $(GRUBDIR)/grub.cfg
-
-# Tools and flags
-AS = nasm
-CC = gcc
-LD = ld
+# === Compilateurs et outils ===
+AS      = nasm
+CC      = gcc
+LD      = ld
 ASFLAGS = -f elf32
-CPPFLAGS = -I./include -m32 -ffreestanding -fno-builtin -fno-stack-protector -nostdlib -c
-LDFLAGS = -m elf_i386 -T $(LINKER)
+CFLAGS  = -W -W -W -m32 -ffreestanding -fno-builtin -fno-stack-protector -nostdlib -I src/kernel/include/ -c
+LDFLAGS = -m elf_i386 -T linker.ld
 
-# find source files and process them
-SRC_C := $(shell find src -type f -name '*.c')
-SRC_S := $(shell find src -type f -name '*.s')
-OBJ_C := $(patsubst src/%.c,$(OBJDIR)/%.o,$(SRC_C))
-OBJ_S := $(patsubst src/%.s,$(OBJDIR)/%.o,$(SRC_S))
-KERNEL_OBJ := $(OBJ_C) $(OBJ_S)
+# === Fichiers et répertoires ===
+SRC_DIR     = src
+BOOT_DIR    = $(SRC_DIR)/boot
+KERNEL_DIR  = $(SRC_DIR)/kernel/src
+INCLUDE_DIR = $(SRC_DIR)/kernel/include
+BUILD_DIR   = build
+ISO_DIR     = iso
+GRUB_DIR    = grub
+ISO         = kernel.iso
+ELF         = kernel.elf
 
-$(OBJDIR):
-	mkdir -p $(OBJDIR)
+# === Recherche automatique des fichiers ===
+C_SRCS  = $(shell find $(KERNEL_DIR) -name '*.c')
+ASM_SRCS = $(shell find $(BOOT_DIR) -name '*.s')
+OBJS    = $(patsubst $(SRC_DIR)/%, $(BUILD_DIR)/%, $(C_SRCS:.c=.o) $(ASM_SRCS:.s=.o))
 
-$(BOOTDIR):
-	mkdir -p $(BOOTDIR)
+# === Cible par défaut ===
+all: $(ISO)
 
-$(GRUBDIR):
-	mkdir -p $(GRUBDIR)
-
-$(OBJDIR)/%.o: src/%.c | $(OBJDIR)
-	$(CC) $(CPPFLAGS) -c $< -o $@
-
-$(OBJDIR)/%.o: src/%.s | $(OBJDIR)
+# === Compilation des fichiers ASM ===
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.s
+	@mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) $< -o $@
 
-$(KERNEL_ELF): $(KERNEL_OBJ) $(LINKER) | $(BOOTDIR)
-	$(LD) $(LDFLAGS) -o $@ $(KERNEL_OBJ)
+# === Compilation des fichiers C ===
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $< -o $@
 
-$(ISO): $(KERNEL_ELF) $(GRUB_CFG)
-	grub-mkrescue -o $(ISO) iso/ --locales="" --fonts="" --themes="" \
+# === Édition de liens ===
+$(ELF): $(OBJS)
+	$(LD) $(LDFLAGS) $(OBJS) -o $(ELF)
+
+# === Construction de l'image ISO ===
+$(ISO): $(ELF)
+	mkdir -p $(ISO_DIR)/boot/grub
+	cp $(ELF) $(ISO_DIR)/boot/
+	cp $(GRUB_DIR)/grub.cfg $(ISO_DIR)/boot/grub/
+	grub-mkrescue -o $(ISO) $(ISO_DIR)/ --locales="" --fonts="" --themes="" \
 		--modules="multiboot normal iso9660 biosdisk ls" \
 		--directory=$(HOME)/local/usr/lib/grub/i386-pc
 
-all: $(ISO)
-
+# === Lancement dans QEMU ===
 run: $(ISO)
-	qemu-system-i386 -cdrom $(ISO) -boot d -m 2048 -smp 4 -serial stdio
+	qemu-system-i386 -cdrom $(ISO) -serial stdio
 
+# === Nettoyage basique ===
 clean:
-	rm -rf $(OBJDIR) $(BOOTDIR)/os.elf
+	rm -rf $(BUILD_DIR) $(ELF)
 
+# === Nettoyage complet ===
 fclean: clean
-	rm -rf $(ISO)
+	rm -f $(ISO)
+	rm -rf $(ISO_DIR)
 
+# === Reconstruction complète ===
 re: fclean all
 
-.PHONY: all run clean fclean re
+.PHONY: all clean fclean re run
+
+
+#mkdir -p ~/local
+#apt download grub-pc-bin
+#dpkg-deb -x grub-pc-bin*.deb ~/local/
+#rm -f grub-pc-bin*.deb
