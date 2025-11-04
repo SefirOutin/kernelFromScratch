@@ -1,4 +1,4 @@
-# === Compilateurs et outils ===
+# === Compilation tools ===
 AS      = nasm
 CC      = gcc
 LD      = ld
@@ -6,7 +6,7 @@ ASFLAGS = -f elf32
 CFLAGS  = -W -W -W -m32 -ffreestanding -fno-builtin -fno-stack-protector -nostdlib -I src/kernel/include/ -c
 LDFLAGS = -m elf_i386 -T linker.ld
 
-# === Fichiers et répertoires ===
+# === Files and directories ===
 SRC_DIR     = src
 BOOT_DIR    = $(SRC_DIR)/boot
 KERNEL_DIR  = $(SRC_DIR)/kernel/src
@@ -17,29 +17,29 @@ GRUB_DIR    = grub
 ISO         = kernel.iso
 ELF         = kernel.elf
 
-# === Recherche automatique des fichiers ===
+# === Automatically search for source files ===
 C_SRCS  = $(shell find $(KERNEL_DIR) -name '*.c')
 ASM_SRCS = $(shell find $(BOOT_DIR) -name '*.s')
 OBJS    = $(patsubst $(SRC_DIR)/%, $(BUILD_DIR)/%, $(C_SRCS:.c=.o) $(ASM_SRCS:.s=.o))
 
-# === Cible par défaut ===
+# === Default target ===
 all: $(ISO)
 
-# === Compilation des fichiers ASM ===
+# === ASM files compilation ===
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.s
 	@mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) $< -o $@
 
-# === Compilation des fichiers C ===
+# === C files compilation ===
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $< -o $@
 
-# === Édition de liens ===
+# === Links editing ===
 $(ELF): $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) -o $(ELF)
 
-# === Construction de l'image ISO ===
+# === ISO Image build ===
 $(ISO): $(ELF)
 	mkdir -p $(ISO_DIR)/boot/grub
 	cp $(ELF) $(ISO_DIR)/boot/
@@ -48,20 +48,20 @@ $(ISO): $(ELF)
 		--modules="multiboot normal iso9660 biosdisk ls" \
 		--directory=$(HOME)/local/usr/lib/grub/i386-pc
 
-# === Lancement dans QEMU ===
+# === Launch with QEMU ===
 run: $(ISO)
 	qemu-system-i386 -cdrom $(ISO) -serial stdio
 
-# === Nettoyage basique ===
+# === Basic cleaning ===
 clean:
 	rm -rf $(BUILD_DIR) $(ELF)
 
-# === Nettoyage complet ===
+# === Full cleaning ===
 fclean: clean
 	rm -f $(ISO)
 	rm -rf $(ISO_DIR)
 
-# === Reconstruction complète ===
+# === Full rebuild ===
 re: fclean all
 
 .PHONY: all clean fclean re run

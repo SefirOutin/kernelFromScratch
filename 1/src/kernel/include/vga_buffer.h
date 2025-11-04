@@ -18,11 +18,11 @@ struct vga_buffer
 	
 
 	// Methods
-	void	(*dup)(struct vga_buffer *self, struct vga_buffer *src);
-	size_t	(*get_size)(struct vga_buffer *self);
-	void	(*set_cursor)(struct vga_buffer *self, int row, int col);
-	void	(*set_byte)(struct vga_buffer *self, size_t index, unsigned char byte);
-	int		(*get_cursor)(struct vga_buffer *self);
+	void		(*dup)(struct vga_buffer *self, struct vga_buffer *src);
+	size_t		(*get_size)(struct vga_buffer *self);
+	void		(*set_cursor)(struct vga_buffer *self, int row, int col);
+	void		(*set_byte)(struct vga_buffer *self, size_t index, unsigned char byte);
+	k_uint16_t	(*get_cursor)(struct vga_buffer *self);
 };
 
 void	vga_buffer_constructor(struct vga_buffer *self);

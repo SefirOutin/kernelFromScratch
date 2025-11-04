@@ -27,6 +27,7 @@ struct vga_console
     void    (*scroll)(struct vga_console *self);
     void    (*set_buffer)(struct vga_console *self, int new_active_screen);
 	void	(*flush)(struct vga_console *self);
+    void    (*delchar)(struct vga_console *self);
 };
 
 void vga_console_constructor(struct vga_console *self);

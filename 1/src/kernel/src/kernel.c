@@ -18,12 +18,13 @@ void kernel(unsigned long magic, unsigned long addr)
 	struct vga_buffer	buffer0, buffer1;
 
 	serial_init();
+	
 	ps2_driver_constructor(&ps2);				// here we assume ps2 controller always exists
+	ps2.init(&ps2);
+
 	vga_buffer_constructor(&buffer0);
 	vga_buffer_constructor(&buffer1);
 	vga_console_constructor(&vga);
-	// vga.set_buffer(&vga, &buffer0);
-	ps2.init(&ps2);
 	vga.buffer[0] = &buffer0;	
 	vga.buffer[1] = &buffer1;	
 	
@@ -38,11 +39,14 @@ void kernel(unsigned long magic, unsigned long addr)
 	    chart = ps2.keyboard.handle_scancode(&ps2.keyboard, &ps2, ps2.read_byte(&ps2));
 		printf("chart: %d\n", chart);
 		if (chart < 0)
-			vga.set_buffer(&vga, -chart - 1);
-		if (chart)
 		{
-			vga.putchar(&vga, chart);
-			vga.set_cursor(&vga, vga.row, vga.col);
+			vga.set_buffer(&vga, -chart - 1);
+			continue;
 		}
+		else if (chart == '\b')
+			vga.delchar(&vga);
+		else if (chart)
+			vga.putchar(&vga, chart);
+		vga.set_cursor(&vga, vga.row, vga.col);
 	}
 }

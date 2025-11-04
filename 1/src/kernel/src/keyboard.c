@@ -1,6 +1,9 @@
 #include "keyboard.h"
 #include "ps2_driver.h"
 #include "lib.h"
+#include "vga_console.h"
+
+extern struct vga_console vga;
 
 char translate(struct keyboard *self, k_uint8_t scancode);
 char handle_keyboard_scancode(struct keyboard *self, struct ps2_driver *ps2_driver, k_uint8_t scancode);
@@ -32,7 +35,7 @@ static const k_uint8_t ps2_set2_to_ascii_shift[PS2_SET2_TABLE_SIZE] = {
     [0x41] = '<',   [0x42] = 'K',   [0x43] = 'I',   [0x44] = 'O',   [0x45] = ')',   [0x46] = '(',
     [0x49] = '>',   [0x4A] = '?',   [0x4B] = 'L',   [0x4C] = ':',   [0x4D] = 'P',   [0x4E] = '_',
     [0x52] = '"',   [0x54] = '{',   [0x55] = '+',   [0x5A] = '\n',  [0x5B] = '}',   [0x5D] = '|',
-    [0x66] = '\b',  [0x76] = 27
+    [0x66] = '\b',	[0x76] = 27		
 };
 
 
@@ -66,15 +69,54 @@ char translate(struct keyboard *self, k_uint8_t scancode)
 	return (character);
 }
 
+void	extended_keys(struct keyboard *self, struct ps2_driver *ps2_driver, k_uint8_t scancode)
+{
+	int		row = vga.row, col = vga.col;
+
+	if (scancode ==  KEYRELEASED) {
+		ps2_driver->read_byte(ps2_driver);
+		return;
+	}
+
+	switch(scancode)
+	{
+		case CURSORLEFT:
+			col--; break;
+		case CURSORRIGHT:
+			col++; break;
+		case CURSORUP:
+			row--; break;
+		case CURSORDOWN:
+			row++; break;
+		default:
+			break;
+	}
+
+	if (col < 0) {
+		col = VGA_WIDTH - 1;
+		row--;
+	}
+	else if (col >= VGA_WIDTH) {
+		col = 0;
+		row++;
+	}
+	if (row < 0) row = 0;
+	if (row >= VGA_HEIGHT) row = VGA_HEIGHT - 1;
+	
+	vga.set_cursor(&vga, row, col);
+}
+
 char handle_keyboard_scancode(struct keyboard *self, struct ps2_driver *ps2_driver, k_uint8_t scancode)
 {
 	bool is_released = false;
 
-	if (scancode == KEYRELEASED0) {
+	if (scancode == EXTENDEDKEY) {
+		printf("la\n");
 		is_released = true;
-		scancode = ps2_driver->read_byte(ps2_driver);
+		extended_keys(self, ps2_driver, ps2_driver->read_byte(ps2_driver));
+		return (0);
 	}
-	if (scancode ==  KEYRELEASED1) {
+	if (scancode ==  KEYRELEASED) {
 		is_released = true;
 		scancode = ps2_driver->read_byte(ps2_driver);
 	}
@@ -90,12 +132,22 @@ char handle_keyboard_scancode(struct keyboard *self, struct ps2_driver *ps2_driv
 			self->_is_alt_pressed ^= bit(0);
 			return (0);
 		case SPACEBAR:
-			return (' ');
+			return (is_released ? 0 : ' ');
 		case BACKSPACE:
 			return (is_released ? 0 : '\b');
 		case CAPSLOCK:
 			self->_is_caps_lock_on = is_released ? self->_is_caps_lock_on : self->_is_caps_lock_on ^ bit(0);
-
+			break;
+		case KEYPAD1:
+			vga.set_color(&vga, 0x07);
+			return (0);
+		case KEYPAD2:
+			vga.set_color(&vga, 0x0A);
+			return (0);
+		case KEYPAD3:
+			vga.set_color(&vga, 0x14);
+			return (0);
+		
 	}
 	if (is_released)
 		return (0);
