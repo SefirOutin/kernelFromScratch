@@ -1,5 +1,5 @@
-#ifndef _TYPE_H
-#define _TYPE_H
+#ifndef _TYPE_H_
+#define _TYPE_H_
 
 typedef unsigned char		bool;
 typedef unsigned char		k_uint8_t;

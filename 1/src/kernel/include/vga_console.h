@@ -1,5 +1,5 @@
-#ifndef _VGA_CONSOLE_H
-#define _VGA_CONSOLE_H
+#ifndef _VGA_CONSOLE_H_
+#define _VGA_CONSOLE_H_
 
 #include "type.h"
 

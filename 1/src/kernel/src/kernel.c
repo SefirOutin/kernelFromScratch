@@ -11,15 +11,17 @@ struct vga_console  vga;
 
 void kernel(unsigned long magic, unsigned long addr)
 {
-	(void)magic;
 	(void)addr;
+
+	if (magic != 0x36d76289)		// magic value given by GRUB indicating it was
+		return;						// loaded by a Multiboot2-compliant bootloader
 
 	struct ps2_driver   ps2;
 	struct vga_buffer	buffer0, buffer1;
 
 	serial_init();
-	
-	ps2_driver_constructor(&ps2);				// here we assume ps2 controller always exists
+
+	ps2_driver_constructor(&ps2);	// here we assume ps2 controller always exists
 	ps2.init(&ps2);
 
 	vga_buffer_constructor(&buffer0);
@@ -37,12 +39,8 @@ void kernel(unsigned long magic, unsigned long addr)
 	while (1)
 	{
 	    chart = ps2.keyboard.handle_scancode(&ps2.keyboard, &ps2, ps2.read_byte(&ps2));
-		printf("chart: %d\n", chart);
 		if (chart < 0)
-		{
-			vga.set_buffer(&vga, -chart - 1);
-			continue;
-		}
+			{ vga.set_buffer(&vga, -chart - 1); continue; }
 		else if (chart == '\b')
 			vga.delchar(&vga);
 		else if (chart)

@@ -30,6 +30,7 @@ extern kernel
 _start:
     mov esp,  stack_top
     push ebx
+    push eax
     call kernel
 .loop:
     hlt

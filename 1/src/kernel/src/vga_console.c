@@ -27,7 +27,7 @@ void vga_console_constructor(struct vga_console *self)
     self->set_buffer = vga_set_buffer;
 	self->flush = vga_flush;
     self->delchar = vga_delchar;
-    // self->clear(self);
+
 }
 
 
@@ -59,7 +59,6 @@ static void vga_putchar(struct vga_console *self, char c)
         if (self->row >= VGA_HEIGHT)
             self->scroll(self);
     }
-
 }
 
 static void vga_delchar(struct vga_console *self)
@@ -73,22 +72,14 @@ static void vga_delchar(struct vga_console *self)
 		self->col = VGA_WIDTH - 1;
 		self->row--;
 		index = self->row * VGA_WIDTH + self->col;
-    	printf("del nl\n");
-    	printf("i before del nl: %d char: %d\n", index, (k_uint8_t)CURR_BUFFER->buffer[index]);
         while (index && (!isprint((k_uint8_t)CURR_BUFFER->buffer[index - 1])))
     		index--;
-        printf("new index: %d char: %d\n", index, (k_uint8_t)CURR_BUFFER->buffer[index]);
         self->col = index % VGA_WIDTH;
         self->row = index / VGA_WIDTH;
-		printf("result: y: %d x: %d\n", self->row, self->col);
         return;
     }
-    // printf("current char in frame: 0x%X\n", (k_uint8_t)(self->hdw_buf[index]));
-    // if (!(k_uint8_t)(self->hdw_buf[index] >> 8))
-    // {
-        //     printf("oui\n");
-    // }
-	index = self->row * VGA_WIDTH + self->col;
+
+    index = self->row * VGA_WIDTH + self->col;
     self->col--;
 	CURR_BUFFER->buffer[index - 1] = 0;
     self->hdw_buf[index - 1] = vga_entry(' ', self->color);
@@ -96,10 +87,11 @@ static void vga_delchar(struct vga_console *self)
 
 static void vga_clear(struct vga_console *self)
 {
-    for (int y = 0; y < VGA_HEIGHT; y++)
-        for (int x = 0; x < VGA_WIDTH; x++)
-            self->hdw_buf[y * VGA_WIDTH + x] = vga_entry(0, self->color);
+    size_t limit = VGA_HEIGHT * VGA_WIDTH;
 
+    for (size_t i = 0; i < limit; i++)
+        self->hdw_buf[i] = vga_entry(0, self->color);
+    
     self->row = 0;
     self->col = 0;
 }
@@ -116,7 +108,6 @@ static void vga_set_cursor(struct vga_console *self, k_uint8_t row, k_uint8_t co
     self->col = col;
 
     CURR_BUFFER->set_cursor(CURR_BUFFER, self->row, self->col);
-
 
     k_uint16_t pos = self->row * VGA_WIDTH + self->col;
 
@@ -136,10 +127,7 @@ static void vga_scroll(struct vga_console *self)
 
     self->row = VGA_HEIGHT - 1;
     self->col = 0;
-    CURR_BUFFER->set_cursor(CURR_BUFFER, self->row, self->col);
 	self->flush(self);
-
-
 }
 
 static void	vga_flush(struct vga_console *self)
@@ -149,26 +137,23 @@ static void	vga_flush(struct vga_console *self)
 
 	for (size_t i = 0; i < limit; i++)
     {
-        // printf("%d ", CURR_BUFFER->buffer[i]);
-        // if (!(i % 79))
-        //     printf("\n%d: ", i + 1);
 		c = CURR_BUFFER->buffer[i];
 		self->hdw_buf[i] = vga_entry(c ? c : ' ', self->color);
     }
-    // printf("flush max i: %d\n", limit);
 }
 
 static void    vga_set_buffer(struct vga_console *self, int new_active_screen)
 {
 	k_uint16_t	cursor;
 
+    if (new_active_screen < 0 || new_active_screen > 1)
+        { printf("Error changing buffer screen\n"); return; }
+
     memset((void *)self->hdw_buf, 0, VGA_HEIGHT * VGA_WIDTH * 2);
 
-    
 	self->current_buffer = new_active_screen;
 	cursor = CURR_BUFFER->get_cursor(CURR_BUFFER);
-
-	printf("cursor y: %d x: %d\n", (k_uint8_t)cursor, (k_uint8_t)(cursor >> 8));
-	self->set_cursor(self, (k_uint8_t)cursor, (k_uint8_t)(cursor >> 8));
-	self->flush(self);
+    self->set_cursor(self, (k_uint8_t)cursor, (k_uint8_t)(cursor >> 8));
+	
+    self->flush(self);
 }

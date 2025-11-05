@@ -111,8 +111,6 @@ char handle_keyboard_scancode(struct keyboard *self, struct ps2_driver *ps2_driv
 	bool is_released = false;
 
 	if (scancode == EXTENDEDKEY) {
-		printf("la\n");
-		is_released = true;
 		extended_keys(self, ps2_driver, ps2_driver->read_byte(ps2_driver));
 		return (0);
 	}
@@ -147,7 +145,6 @@ char handle_keyboard_scancode(struct keyboard *self, struct ps2_driver *ps2_driv
 		case KEYPAD3:
 			vga.set_color(&vga, 0x14);
 			return (0);
-		
 	}
 	if (is_released)
 		return (0);

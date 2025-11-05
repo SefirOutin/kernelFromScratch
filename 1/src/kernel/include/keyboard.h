@@ -1,5 +1,5 @@
-#ifndef _KEYBOARD_H
-#define _KEYBOARD_H
+#ifndef _KEYBOARD_H_
+#define _KEYBOARD_H_
 
 #include "lib.h"
 

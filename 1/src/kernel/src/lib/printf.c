@@ -93,6 +93,7 @@ void	pf_putnbr(int nb, size_t *len)
 	}
 	if (n > 9)
 		pf_putnbr(n / 10, len);
+		
 	*len += pf_putchar(n % 10 + 48);
 }
 
@@ -100,6 +101,7 @@ size_t	pf_putstr(char *s)
 {
 	if (!s)
 		return (serial_write("(null)", 6));
+
 	return (serial_write(s, strlen(s)));
 }
 
@@ -109,9 +111,8 @@ static inline void	pf_putnbr_base(unsigned long nb, const char *base, size_t *le
 		return;
 
 	if (nb >= baseLen)
-	{
 		pf_putnbr_base(nb / baseLen, base, len, baseLen);
-	}
+	
 	*len += pf_putchar(base[nb % baseLen]);
 }
 
@@ -130,10 +131,7 @@ void	pf_convert_base(unsigned long nb, char index, size_t *len)
 			break;
 		case 'p':
 			if (!nb)
-			{
-				*len += serial_write("(nil)", 5);
-				return ;
-			}
+				{ *len += serial_write("(nil)", 5); return ; }
 			*len += serial_write("0x", 2);
 			pf_putnbr_base(nb, HEXBASE, len, HEXBASELEN);
 			break;

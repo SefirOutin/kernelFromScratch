@@ -2,13 +2,12 @@
 #include "type.h"
 #include "lib.h"
 
+#define TIMEOUT 10000
 
 static k_uint8_t	read_byte_ps2(struct ps2_driver *self);
 static bool 		has_data_ps2(struct ps2_driver *self);
 static void 		send_byte_ps2(struct ps2_driver *self, k_uint8_t c);
 int	    			init_ps2_controller(struct ps2_driver *self);
-
-#define TIMEOUT 10000
 
 void ps2_driver_constructor(struct ps2_driver *self)
 {
@@ -75,12 +74,12 @@ static inline int test_ps2_port(struct ps2_driver *self, int port)
 	self->send_byte(self, 0xFF);					// reset device
 	
 	for (int i = 0; i < 2; i++)
-		printf("port%d test: %X ", port, self->read_byte(self));
+		printf("PS/2 controller: port%d test: %X ", port, self->read_byte(self));
 	printf("\n");
 
 	if (port == 2) outb(PS2StatusCmd, 0xD4);
 	self->send_byte(self, 0xF5);			// Disable scan dev	
-	printf("ACK disable dev port %d: %X\n", port, self->read_byte(self));
+	printf("PS/2 controller: ACK disable dev port %d: %X\n", port, self->read_byte(self));
 	return (bit(port - 1));
 }
 
@@ -99,15 +98,15 @@ static inline void identify_ps2_device(struct ps2_driver *self, int port, int ac
 	while (ret == 0xFA); 						// ACK
 	
 	if (ret >= 0xAB && read_byte_ps2_timeout(self) == 0x83) {
-        printf("keyboard detected on port %d\n", port);
+        printf("PS/2 controller: keyboard detected on port %d\n", port);
         self->keyboard_port = port;
 	}
 	else if (ret == 0) {
-		printf("mouse detected on port %d\n", port);
+		printf("PS/2 controller: mouse detected on port %d\n", port);
 		// mouse ???
 	}
 	else
-		printf("unsupported device or timeout\n");
+		printf("PS/2 controller: unsupported device or timeout\n");
 }
 
 int    init_ps2_controller(struct ps2_driver *self)
@@ -116,6 +115,8 @@ int    init_ps2_controller(struct ps2_driver *self)
 	volatile int		ret;
 	volatile k_uint8_t	byte;
 	
+	printf("\n*** Starting PS/2 controller intialisation ***\n\n");
+
 	outb(PS2StatusCmd, 0xAD);				// Disable 1st device
 	outb(PS2StatusCmd, 0xA7);				// Disable 2nd device if it exists
 	inb(PS2Data);							// Flush controller output buffer 
@@ -123,7 +124,7 @@ int    init_ps2_controller(struct ps2_driver *self)
 	
 	outb(PS2StatusCmd, 0x20);				// Tell to read controller config
 	ret = read_byte_ps2_timeout(self);			// read controller config
-	if (ret < 0) { printf("PS/2 controller error\n"); return (1); }
+	if (ret < 0) { printf("PS/2 controller: error\n"); return (1); }
 	
 	byte = (k_uint8_t)ret & ~(bit(6) | bit(4) | bit(0));	// 1st port: disable int, translation; enable port clock
 	write_ps2_config(self, byte);			// Send new config
@@ -131,10 +132,10 @@ int    init_ps2_controller(struct ps2_driver *self)
 	outb(PS2StatusCmd, 0xAA);				// Perform controller self test
 	if (read_byte_ps2_timeout(self) != 0x55) {
 		write_ps2_config(self, byte);			// Send new config
-		printf("PS/2 controller self-test failed!\n");
+		printf("PS/2 controller: self-test failed!\n");
 		return (1);
 	}
-	printf("PS/2 controller self-test: pass\n");	// check result
+	printf("PS/2 controller: self-test: pass\n");	// check result
 	
 	outb(PS2StatusCmd, 0xA8);			// Test dual channel
 	outb(PS2StatusCmd, 0x20);			// Tell to read controller config
@@ -145,13 +146,14 @@ int    init_ps2_controller(struct ps2_driver *self)
 		byte &= ~(bit(5) | bit(1));			// 2nd port: disable int; enable port clock
 		write_ps2_config(self, byte);		// Send new config
 	}
-	printf("channel: %s\n", dualChannel ? "dual" : "mono");
+	printf("PS/2 controller: channel: %s\n", dualChannel ? "dual" : "mono");
 
 	active_channels |= test_ps2_port(self, 1);
 	if (dualChannel)
 		active_channels |= test_ps2_port(self, 2);
 
-	if (!active_channels) { printf("No PS/2 device detected!\n"); return (1); }
+	if (!active_channels) 
+		{ printf("PS/2 controller: No device detected!\n"); return (1); }
 
 	identify_ps2_device(self, 1, active_channels);
 	identify_ps2_device(self, 2, active_channels);
@@ -161,9 +163,12 @@ int    init_ps2_controller(struct ps2_driver *self)
 
 	self->send_byte(self, 0xF4);				// enable scan 1st dev
 	if (dualChannel) {
-		outb(PS2StatusCmd, 0xD4);					// talk to 2nd dev
-		self->send_byte(self, 0xF4);				// enable scan 2nd dev
+		outb(PS2StatusCmd, 0xD4);				// talk to 2nd dev
+		self->send_byte(self, 0xF4);			// enable scan 2nd dev
 	}
-	return 0;
+
+	printf("\n*** PS/2 controller intialisation ended ***\n\n");
+
+	return (0);
 }
 
