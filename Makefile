@@ -3,7 +3,7 @@ AS      = nasm
 CC      = gcc
 LD      = ld
 ASFLAGS = -f elf32
-CFLAGS  = -W -W -W -m32 -ffreestanding -fno-builtin -fno-stack-protector -nostdlib -I src/kernel/include/ -c
+CFLAGS  = -W -W -W -m32 -ffreestanding -fno-builtin -fno-stack-protector -nostdlib -I ./src/kernel/include/ -c
 LDFLAGS = -m elf_i386 -T linker.ld
 
 # === Files and directories ===

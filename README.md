@@ -7,7 +7,6 @@ Quick notes
 
 
 Make targets (simple)
-- make build  — assemble & link kernel
-- make iso    — put kernel in iso/ and build bootable ISO
+- make        — assemble & link kernel, put kernel in iso/ and build bootable ISO
 - make run    — launch the ISO in QEMU
 - make clean  — remove build artifacts
