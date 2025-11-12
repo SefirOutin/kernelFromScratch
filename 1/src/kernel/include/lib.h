@@ -6,7 +6,7 @@
 #include "type.h"
 #include "serial.h"
 
-#define bit(x) (1U << (x))
+#define BIT(x) (1U << (x))
 
 size_t	strlen(const char *str);
 char	*strchr(const char *s, int c);

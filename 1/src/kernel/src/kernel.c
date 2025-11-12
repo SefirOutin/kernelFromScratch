@@ -35,16 +35,16 @@ void kernel(unsigned long magic, unsigned long addr)
 	vga.putchar(&vga, '\n');
 	
 	vga.set_cursor(&vga, vga.row, vga.col);
-	char chart;
+	char character;
 	while (1)
 	{
-	    chart = ps2.keyboard.handle_scancode(&ps2.keyboard, &ps2, ps2.read_byte(&ps2));
-		if (chart < 0)
-			{ vga.set_buffer(&vga, -chart - 1); continue; }
-		else if (chart == '\b')
+	    character = ps2.keyboard.handle_scancode(&ps2.keyboard, &ps2, ps2.read_byte(&ps2));
+		if (character < 0)
+			{ vga.set_buffer(&vga, -character - 1); continue; }
+		else if (character == '\b')
 			vga.delchar(&vga);
-		else if (chart)
-			vga.putchar(&vga, chart);
+		else if (character)
+			vga.putchar(&vga, character);
 		vga.set_cursor(&vga, vga.row, vga.col);
 	}
 }

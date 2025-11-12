@@ -72,7 +72,7 @@ static void vga_delchar(struct vga_console *self)
 		self->col = VGA_WIDTH - 1;
 		self->row--;
 		index = self->row * VGA_WIDTH + self->col;
-        while (index && (!isprint((k_uint8_t)CURR_BUFFER->buffer[index - 1])))
+        while (index && (!isprint(CURR_BUFFER->buffer[index - 1])))
     		index--;
         self->col = index % VGA_WIDTH;
         self->row = index / VGA_WIDTH;

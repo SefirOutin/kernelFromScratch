@@ -65,7 +65,7 @@ char translate(struct keyboard *self, k_uint8_t scancode)
 		character = self->_set_table[scancode];
 
 	if (self->_is_caps_lock_on && isalpha(character))
-		return (character ^ bit(5));
+		return (character ^ BIT(5));
 	return (character);
 }
 
@@ -121,20 +121,20 @@ char handle_keyboard_scancode(struct keyboard *self, struct ps2_driver *ps2_driv
 	switch (scancode)
 	{
 		case LEFTSHIFT:
-			self->_is_left_shift_pressed ^= bit(0);
+			self->_is_left_shift_pressed ^= BIT(0);
 			return (0);
 		case RIGHTSHIFT:
-			self->_is_right_shift_pressed ^= bit(0);
+			self->_is_right_shift_pressed ^= BIT(0);
 			return (0);
 		case LEFTALT:
-			self->_is_alt_pressed ^= bit(0);
+			self->_is_alt_pressed ^= BIT(0);
 			return (0);
 		case SPACEBAR:
 			return (is_released ? 0 : ' ');
 		case BACKSPACE:
 			return (is_released ? 0 : '\b');
 		case CAPSLOCK:
-			self->_is_caps_lock_on = is_released ? self->_is_caps_lock_on : self->_is_caps_lock_on ^ bit(0);
+			self->_is_caps_lock_on = is_released ? self->_is_caps_lock_on : self->_is_caps_lock_on ^ BIT(0);
 			break;
 		case KEYPAD1:
 			vga.set_color(&vga, 0x07);
