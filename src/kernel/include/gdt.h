@@ -22,4 +22,6 @@ struct	gdt_entry
 }__attribute__((packed));
 
 
+void setup_gdt(struct gdt_entry *gdt);
+
 #endif

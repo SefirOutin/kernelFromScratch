@@ -2,33 +2,33 @@
 #include "lib.h"
 
 void		gdt_set_gate(struct gdt_entry *entry, struct gdt_raw_entry *raw);
-extern void	set_gdt(k_uint16_t limit, k_uint32_t base);
+extern void	load_gdt(k_uint16_t limit, k_uint32_t base);
 
-void setup_gdt()
+void setup_gdt(struct gdt_entry *gdt)
 {
 	struct gdt_raw_entry	raw;
-	struct gdt_entry 		gdt[5];
 
-	raw = (struct gdt_raw_entry){ 0, 0, 0, 0};
+	// Null Segment
+	raw = (struct gdt_raw_entry){ 0, 0, 0, 0 };
 	gdt_set_gate(&gdt[0], &raw);
 
 	// Kernel Code Segment
-	raw = (struct gdt_raw_entry){ 0, 0xFFFFFFFF, 0x9A, 0xAF};
+	raw = (struct gdt_raw_entry){ 0, 0xFFFFFFFF, 0x9A, 0xCF };
 	gdt_set_gate(&gdt[1], &raw);
 
 	// Kernel Data Segment
-	raw = (struct gdt_raw_entry){ 0, 0xFFFFFFFF, 0x92, 0xCF};
+	raw = (struct gdt_raw_entry){ 0, 0xFFFFFFFF, 0x92, 0xCF };
 	gdt_set_gate(&gdt[2], &raw);
 
 	// User Code Segment
-	raw = (struct gdt_raw_entry){ 0, 0xFFFFFFFF, 0xFA, 0xAF};
+	raw = (struct gdt_raw_entry){ 0, 0xFFFFFFFF, 0xFA, 0xCF };
 	gdt_set_gate(&gdt[3], &raw);
 	
 	// User Data Segment
-	raw = (struct gdt_raw_entry){ 0, 0xFFFFFFFF, 0xF2, 0xCF};
-	gdt_set_gate(&gdt[4], &raw);\
+	raw = (struct gdt_raw_entry){ 0, 0xFFFFFFFF, 0xF2, 0xCF };
+	gdt_set_gate(&gdt[4], &raw);
 
-	set_gdt((sizeof(struct gdt_entry) * 3) - 1, &gdt);
+	load_gdt((k_uint16_t)(5 * sizeof(struct gdt_entry) - 1), (k_uint32_t)gdt);
 }
 
 void gdt_set_gate(struct gdt_entry *entry, struct gdt_raw_entry *raw)

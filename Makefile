@@ -18,8 +18,8 @@ ISO         = kernel.iso
 ELF         = kernel.elf
 
 # === Automatically search for source files ===
-C_SRCS  = $(shell find $(KERNEL_DIR) -name '*.c')
-ASM_SRCS = $(shell find $(BOOT_DIR) -name '*.s')
+C_SRCS  = $(shell find $(SRC_DIR) -name '*.c')
+ASM_SRCS = $(shell find $(SRC_DIR) -name '*.s')
 OBJS    = $(patsubst $(SRC_DIR)/%, $(BUILD_DIR)/%, $(C_SRCS:.c=.o) $(ASM_SRCS:.s=.o))
 
 # === Default target ===

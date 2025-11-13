@@ -1,12 +1,27 @@
-SECTION .text
-global set_gdt
+SECTION .data
 
 gdtr	DW 0	; limit
 		DD 0	; base adress
 
-set_gdt:
-	mov ax, [esp - 4]
-	mov [gdtr], ax
-	mov eax, [esp - 8]
-	mov [gdtr + 2], eax
+SECTION .text
+global load_gdt
+extern printf
+
+load_gdt:
+	mov ax, [esp + 4]		; limit
+	mov [gdtr], ax			; put limit in gdtr descriptor
+	mov eax, [esp + 8]		; base address
+	mov [gdtr + 2], eax		; put base address in gdtr descriptor
 	lgdt [gdtr]
+
+reload_code_segment:
+	jmp 0x08:reload_data_segments	; code segment selector: 0x08 >> 3 = 1
+
+reload_data_segments:
+	mov ax, 0x10			; data segment selector: 0x10 >> 3 = 2
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+	mov ss, ax
+	ret
