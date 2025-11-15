@@ -21,5 +21,6 @@ void	*memcpy(void *dest, const void *src, size_t size);
 
 
 int     printf(const char *str, ...);
+int		vprintf(const char *str, va_list args);
 
 #endif

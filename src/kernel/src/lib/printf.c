@@ -14,6 +14,17 @@ void		pf_putnbr(int nb, size_t *len);
 void		pf_convert_base(unsigned long nb, char index, size_t *len);
 
 
+int	vprintf(const char *str, va_list args)
+{
+	size_t	len = 0;
+
+	if (!str)
+		return (-1);
+	if (check_format(str))
+		oula(str, args, &len);
+	return (len);
+}
+
 int	printf(const char *str, ...)
 {
 	va_list	args;

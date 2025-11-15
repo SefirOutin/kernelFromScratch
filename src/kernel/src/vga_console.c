@@ -13,6 +13,8 @@ static void vga_set_buffer(struct vga_console *self, int new_active_screen);
 static void	vga_flush(struct vga_console *self);
 static void vga_delchar(struct vga_console *self);
 
+static struct vga_buffer	buffer0, buffer1;
+
 void vga_console_constructor(struct vga_console *self)
 {
     memset(self, 0, sizeof(struct vga_console));
@@ -28,6 +30,10 @@ void vga_console_constructor(struct vga_console *self)
 	self->flush = vga_flush;
     self->delchar = vga_delchar;
 
+	vga_buffer_constructor(&buffer0);
+	vga_buffer_constructor(&buffer1);
+	self->buffer[0] = &buffer0;	
+	self->buffer[1] = &buffer1;	
 }
 
 

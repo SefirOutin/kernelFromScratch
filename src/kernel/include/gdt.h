@@ -2,6 +2,7 @@
 #define _GDT_H_
 
 #include "type.h"
+#include "tss.h"
 
 struct gdt_raw_entry
 {
@@ -22,6 +23,8 @@ struct	gdt_entry
 }__attribute__((packed));
 
 
-void setup_gdt(struct gdt_entry *gdt);
+
+
+void setup_gdt(struct gdt_entry *gdt, struct tss_entry *tss);
 
 #endif

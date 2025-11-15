@@ -5,7 +5,6 @@ gdtr	DW 0	; limit
 
 SECTION .text
 global load_gdt
-extern printf
 
 load_gdt:
 	mov ax, [esp + 4]		; limit
@@ -13,6 +12,10 @@ load_gdt:
 	mov eax, [esp + 8]		; base address
 	mov [gdtr + 2], eax		; put base address in gdtr descriptor
 	lgdt [gdtr]
+
+load_tss:
+	mov eax, 0x28			; TSS selector: 0x28 >>> 3 = 5
+	ltr ax
 
 reload_code_segment:
 	jmp 0x08:reload_data_segments	; code segment selector: 0x08 >> 3 = 1
