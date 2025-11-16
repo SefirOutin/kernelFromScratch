@@ -1,6 +1,7 @@
 #include "gdt.h"
 #include "lib.h"
 #include "tss.h"
+#include "printk.h"
 
 void		gdt_set_gate(struct gdt_entry *entry, struct gdt_raw_entry *raw);
 extern void	load_gdt(k_uint16_t limit, k_uint32_t base);
@@ -9,10 +10,10 @@ void setup_gdt(struct gdt_entry *gdt, struct tss_entry *tss)
 {
 	struct gdt_raw_entry	raw;
 
-	// Null Segment
-	// raw = (struct gdt_raw_entry){ 0, 0, 0, 0 };
-	// gdt_set_gate(&gdt[0], &raw);
 	memset(gdt, 0, (6 * sizeof(struct gdt_entry)));
+	// Null Segment
+	// (already zeroed out)
+
 	// Kernel Code Segment
 	raw = (struct gdt_raw_entry){ 0, 0xFFFFFFFF, 0x9A, 0xCF };
 	gdt_set_gate(&gdt[1], &raw);
@@ -34,8 +35,9 @@ void setup_gdt(struct gdt_entry *gdt, struct tss_entry *tss)
 	raw = (struct gdt_raw_entry){ (k_uint32_t)tss, sizeof(*tss) - 1, 0x89, 0 };
 	gdt_set_gate(&gdt[5], &raw);
 
-	// struct gdt_entry *h = &gdt[5];
 	load_gdt((k_uint16_t)(6 * sizeof(struct gdt_entry) - 1), (k_uint32_t)gdt);
+
+	printk(LOG_INFO, "GDT: loaded\n");
 }
 
 void gdt_set_gate(struct gdt_entry *entry, struct gdt_raw_entry *raw)

@@ -36,10 +36,18 @@ void	kinit(struct gdt_entry *gdt, struct tss_entry *tss, struct ps2_driver *ps2)
 
 }
 
+void	putstr(const char *str)
+{
+	while (*str)
+		vga.putchar(&vga, *str++);
+	// vga.set_cursor(&vga, vga.row, vga.col);
+}
+
 void	userHello()
 {
-	vga.putchar(&vga, 'C');
-	for ( ;; );
+	// vga = (struct vga_console){0};
+	putstr("Hello from user mode!\n");
+	while (1);
 }
 
 void kernel(unsigned long magic, unsigned long addr)
@@ -52,12 +60,13 @@ void kernel(unsigned long magic, unsigned long addr)
 	(void)addr;
 	
 	if (magic != 0x36d76289)		// magic value given by GRUB indicating it was
-	return;							// loaded by a Multiboot2-compliant bootloader
+		return;						// loaded by a Multiboot2-compliant bootloader
 	
-
 	kinit(gdt, &tss, &ps2);
 
-	// switch_to_user_mode(&user_stack, &userHello);
+	putstr("KERNEL MODE\n");
+
+	switch_to_user_mode(user_stack + USERSTACKSIZE - 4, userHello);
 
 	vga.putchar(&vga, '4');
 	vga.putchar(&vga, '2');

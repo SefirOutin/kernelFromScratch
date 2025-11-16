@@ -63,7 +63,73 @@ static inline void write_ps2_config(struct ps2_driver *self, k_uint8_t byte)
 	self->send_byte(self, byte);			// Send new config
 }
 
-static inline int test_ps2_port(struct ps2_driver *self, int port)
+static int test_ps2_port(struct ps2_driver *self, int port);
+static void identify_ps2_device(struct ps2_driver *self, int port, int active_channels);
+
+int    init_ps2_controller(struct ps2_driver *self)
+{
+	int					dualChannel = 0, active_channels = 0;
+	volatile int		ret;
+	volatile k_uint8_t	byte;
+	
+	printk(LOG_INFO, "*** Starting PS/2 controller intialisation ***\n");
+
+	outb(PS2StatusCmd, 0xAD);				// Disable 1st device
+	outb(PS2StatusCmd, 0xA7);				// Disable 2nd device if it exists
+	inb(PS2Data);							// Flush controller output buffer 
+
+	
+	outb(PS2StatusCmd, 0x20);				// Tell to read controller config
+	ret = read_byte_ps2_timeout(self);			// read controller config
+	if (ret < 0) { printk(LOG_ERROR, "PS/2 controller: error\n"); return (1); }
+	
+	byte = (k_uint8_t)ret & ~(BIT(6) | BIT(4) | BIT(0));	// 1st port: disable int, translation; enable port clock
+	write_ps2_config(self, byte);			// Send new config
+
+	outb(PS2StatusCmd, 0xAA);				// Perform controller self test
+	if (read_byte_ps2_timeout(self) != 0x55)
+	{
+		write_ps2_config(self, byte);			// Send new config
+		printk(LOG_ERROR, "PS/2 controller: self-test failed!\n");
+		return (1);
+	}
+	printk(LOG_INFO, "PS/2 controller: self-test: pass\n");	// check result
+	
+	outb(PS2StatusCmd, 0xA8);			// Test dual channel
+	outb(PS2StatusCmd, 0x20);			// Tell to read controller config
+	byte = self->read_byte(self);		// read controller config
+	if (!(byte & BIT(5)))				// bit 5 must be clear for dual channel
+	{
+		dualChannel = true;
+		outb(PS2StatusCmd, 0xA7);			// Disable 2nd device if it exists
+		byte &= ~(BIT(5) | BIT(1));			// 2nd port: disable int; enable port clock
+		write_ps2_config(self, byte);		// Send new config
+	}
+	printk(LOG_INFO, "PS/2 controller: channel: %s\n", dualChannel ? "dual" : "mono");
+
+	active_channels |= test_ps2_port(self, 1);
+	if (dualChannel)
+		active_channels |= test_ps2_port(self, 2);
+
+	if (!active_channels) 
+		{ printk(LOG_INFO, "PS/2 controller: No device detected!\n"); return (1); }
+
+	identify_ps2_device(self, 1, active_channels);
+	identify_ps2_device(self, 2, active_channels);
+
+	if (self->keyboard_port)
+		keyboard_constructor(&self->keyboard, 2);
+	if (self->keyboard_port == 1)
+		self->send_byte(self, 0xF4);				// enable scan 1st dev
+	if (dualChannel && self->keyboard_port == 2)
+		{ outb(PS2StatusCmd, 0xD4); self->send_byte(self, 0xF4); }			// enable scan 2nd dev
+
+	printk(LOG_INFO, "*** PS/2 controller intialisation ended ***\n");
+
+	return (0);
+}
+
+static int test_ps2_port(struct ps2_driver *self, int port)
 {
 	k_uint8_t response_byte0, response_byte1;
 
@@ -90,7 +156,7 @@ static inline int test_ps2_port(struct ps2_driver *self, int port)
 	return (BIT(port - 1));
 }
 
-static inline void identify_ps2_device(struct ps2_driver *self, int port, int active_channels)
+static void identify_ps2_device(struct ps2_driver *self, int port, int active_channels)
 {
 	int ret;
 
@@ -116,66 +182,4 @@ static inline void identify_ps2_device(struct ps2_driver *self, int port, int ac
 		printk(LOG_WARN, "PS/2 controller: unsupported device or timeout\n");
 }
 
-int    init_ps2_controller(struct ps2_driver *self)
-{
-	int					dualChannel = 0, active_channels = 0;
-	volatile int		ret;
-	volatile k_uint8_t	byte;
-	
-	printk(LOG_INFO, "\n*** Starting PS/2 controller intialisation ***\n\n");
-
-	outb(PS2StatusCmd, 0xAD);				// Disable 1st device
-	outb(PS2StatusCmd, 0xA7);				// Disable 2nd device if it exists
-	inb(PS2Data);							// Flush controller output buffer 
-
-	
-	outb(PS2StatusCmd, 0x20);				// Tell to read controller config
-	ret = read_byte_ps2_timeout(self);			// read controller config
-	if (ret < 0) { printk(LOG_ERROR, "PS/2 controller: error\n"); return (1); }
-	
-	byte = (k_uint8_t)ret & ~(BIT(6) | BIT(4) | BIT(0));	// 1st port: disable int, translation; enable port clock
-	write_ps2_config(self, byte);			// Send new config
-
-	outb(PS2StatusCmd, 0xAA);				// Perform controller self test
-	if (read_byte_ps2_timeout(self) != 0x55) {
-		write_ps2_config(self, byte);			// Send new config
-		printk(LOG_ERROR, "PS/2 controller: self-test failed!\n");
-		return (1);
-	}
-	printk(LOG_INFO, "PS/2 controller: self-test: pass\n");	// check result
-	
-	outb(PS2StatusCmd, 0xA8);			// Test dual channel
-	outb(PS2StatusCmd, 0x20);			// Tell to read controller config
-	byte = self->read_byte(self);		// read controller config
-	if (!(byte & BIT(5))) {				// bit 5 must be clear 
-		dualChannel = true;
-		outb(PS2StatusCmd, 0xA7);			// Disable 2nd device if it exists
-		byte &= ~(BIT(5) | BIT(1));			// 2nd port: disable int; enable port clock
-		write_ps2_config(self, byte);		// Send new config
-	}
-	printk(LOG_INFO, "PS/2 controller: channel: %s\n", dualChannel ? "dual" : "mono");
-
-	active_channels |= test_ps2_port(self, 1);
-	if (dualChannel)
-		active_channels |= test_ps2_port(self, 2);
-
-	if (!active_channels) 
-		{ printk(LOG_INFO, "PS/2 controller: No device detected!\n"); return (1); }
-
-	identify_ps2_device(self, 1, active_channels);
-	identify_ps2_device(self, 2, active_channels);
-
-	if (self->keyboard_port)
-		keyboard_constructor(&self->keyboard, 2);
-
-	self->send_byte(self, 0xF4);				// enable scan 1st dev
-	if (dualChannel && self->keyboard_port == 2) {
-		outb(PS2StatusCmd, 0xD4);				// talk to 2nd dev
-		self->send_byte(self, 0xF4);			// enable scan 2nd dev
-	}
-
-	printk(LOG_INFO, "\n*** PS/2 controller intialisation ended ***\n\n");
-
-	return (0);
-}
 
