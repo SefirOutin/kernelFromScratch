@@ -14,6 +14,8 @@
 #define USERSTACKSIZE 4096
 
 struct vga_console vga;
+struct ps2_driver ps2;
+
 k_uint8_t user_stack[USERSTACKSIZE];
 k_uint8_t kernel_stack[KERNELSTACKSIZE];
 
@@ -41,10 +43,43 @@ void userHello()
 	while (1);
 }
 
+//  Limited to width of screen for now
+void	readline(char *buffer)
+{
+	char	character;
+	int		i = 0;
+
+	while (i < VGA_WIDTH)
+	{
+		character = ps2.keyboard.handle_scancode(&ps2.keyboard, &ps2, ps2.read_byte(&ps2));
+
+		if (character == '\b')
+			{ vga.delchar(&vga); i--; }
+		else if (character == '\n')
+			{ vga.putchar(&vga, character); vga.set_cursor(&vga, vga.row, vga.col); break; }
+		else if (character)
+		{
+			vga.putchar(&vga, character);
+			buffer[i++] = character;
+		}
+		vga.set_cursor(&vga, vga.row, vga.col);
+
+	}
+	buffer[i] = '\0';
+}
+
+void	microshell()
+{
+	char buffer[VGA_WIDTH + 1];
+
+	while (1)
+	{
+		readline(buffer);
+	}
+}
+
 void kernel(unsigned long magic, unsigned long addr)
 {
-	char character;
-	struct ps2_driver ps2;
 	static struct tss_entry tss;
 	// GDTable is located at 0x800
 	static struct gdt_entry gdt[6] __attribute__((section(".gdt")));
@@ -56,26 +91,11 @@ void kernel(unsigned long magic, unsigned long addr)
 
 	kinit(gdt, &tss, &ps2);
 
-	// top of the stack
-	switch_to_user_mode(user_stack + USERSTACKSIZE - 4, userHello);
+	// top of the user stack
+	// switch_to_user_mode(user_stack + USERSTACKSIZE - 4, userHello);
 
-	vga.putchar(&vga, '4');
-	vga.putchar(&vga, '2');
-	vga.putchar(&vga, '\n');
+	putstr("Welcome to minishell\n");
 	vga.set_cursor(&vga, vga.row, vga.col);
 
-	while (1)
-	{
-		character = ps2.keyboard.handle_scancode(&ps2.keyboard, &ps2, ps2.read_byte(&ps2));
-		if (character < 0)
-		{
-			vga.set_buffer(&vga, -character - 1);
-			continue;
-		}
-		else if (character == '\b')
-			vga.delchar(&vga);
-		else if (character)
-			vga.putchar(&vga, character);
-		vga.set_cursor(&vga, vga.row, vga.col);
-	}
+	microshell();
 }

@@ -84,10 +84,10 @@ void	extended_keys(struct keyboard *self, struct ps2_driver *ps2_driver, k_uint8
 			col--; break;
 		case CURSORRIGHT:
 			col++; break;
-		case CURSORUP:
-			row--; break;
-		case CURSORDOWN:
-			row++; break;
+		// case CURSORUP:
+		// 	row--; break;
+		// case CURSORDOWN:
+		// 	row++; break;
 		default:
 			break;
 	}
