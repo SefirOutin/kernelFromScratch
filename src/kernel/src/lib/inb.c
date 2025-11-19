@@ -1,8 +1,8 @@
 #include "lib.h"
 
-inline unsigned char inb(unsigned short port)
+inline k_uint8_t inb(k_uint16_t port)
 {
-    unsigned char ret;
+    k_uint8_t ret;
     __asm__ volatile ("inb %1, %0" : "=a"(ret) : "Nd"(port));
     return ret;
 }

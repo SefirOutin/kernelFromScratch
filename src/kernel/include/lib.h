@@ -13,11 +13,14 @@ char	*strchr(const char *s, int c);
 bool	isalpha(char c);
 int     isprint(int c);
 
-void            outb(unsigned short port, unsigned char val);
-unsigned char   inb(unsigned short port);
+void		outb(k_uint16_t port, k_uint8_t val);
+k_uint8_t	inb(k_uint16_t port);
+k_uint16_t 	get_tr();
 
 void	*memset(void *p, int v, size_t size);
 void	*memcpy(void *dest, const void *src, size_t size);
+
+void	putstr(const char *str);
 
 
 int     printf(const char *str, ...);

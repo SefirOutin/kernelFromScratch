@@ -6,6 +6,7 @@ gdtr	DW 0	; limit
 SECTION .text
 global load_gdt
 
+; void	load_gdt(k_uint16_t limit, k_uint32_t base);
 load_gdt:
 	mov ax, [esp + 4]		; limit
 	mov [gdtr], ax			; put limit in gdtr descriptor

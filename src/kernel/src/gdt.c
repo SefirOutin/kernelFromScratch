@@ -47,7 +47,7 @@ void gdt_set_gate(struct gdt_entry *entry, struct gdt_raw_entry *raw)
     entry->base_middle = (raw->base >> 16) & 0xFF;
     entry->base_high = (raw->base >> 24) & 0xFF;
 
-    /* Setup the descriptor limits */
+	/* Setup the descriptor limits */
     entry->limit_low = (raw->limit & 0xFFFF);
     entry->granularity = ((raw->limit >> 16) & 0x0F);
 

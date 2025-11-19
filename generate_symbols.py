@@ -34,16 +34,6 @@ def generate_symbol_table(elf_file):
     print('    {0, NULL}')
     print('};')
     print()
-    print('const char* resolve_symbol(unsigned int addr)')
-    print('{')
-    print('    for (int i = 0; symbol_table[i].name != NULL; i++)')
-    print('    {')
-    print('        if (symbol_table[i].addr <= addr && ')
-    print('            (symbol_table[i+1].name == NULL || symbol_table[i+1].addr > addr))')
-    print('            return symbol_table[i].name;')
-    print('    }')
-    print('    return "??";')
-    print('}')
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
