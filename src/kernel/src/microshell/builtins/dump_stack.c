@@ -1,5 +1,6 @@
 #include "type.h"
 #include "printk.h"
+#include "lib.h"
 
 extern const char *resolve_symbol(unsigned int addr);
 
@@ -31,4 +32,8 @@ void dump_stack(void)
     printk(LOG_INFO, "=========================\n");
 }
 
-
+void dump_stack_builtin(void)
+{
+    putstr("KERNEL STACK DUMPED TO SERIAL\n");
+    dump_stack();
+}

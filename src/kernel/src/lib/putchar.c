@@ -3,10 +3,8 @@
 
 extern struct vga_console vga;
 
-void putstr(const char *str)
+void putchar(int c)
 {
-	while (*str)
-		vga.putchar(&vga, *str++);
-	
+	vga.putchar(&vga, c);
 	vga.set_cursor(&vga, vga.row, vga.col);
 }

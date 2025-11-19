@@ -92,16 +92,13 @@ void	extended_keys(struct keyboard *self, struct ps2_driver *ps2_driver, k_uint8
 			break;
 	}
 
-	if (col < 0) {
+	if (col < 2)
+		col = 2;
+	else if (col >= VGA_WIDTH)
 		col = VGA_WIDTH - 1;
-		row--;
-	}
-	else if (col >= VGA_WIDTH) {
-		col = 0;
-		row++;
-	}
-	if (row < 0) row = 0;
-	if (row >= VGA_HEIGHT) row = VGA_HEIGHT - 1;
+
+	// if (row < 0) row = 0;
+	// if (row >= VGA_HEIGHT) row = VGA_HEIGHT - 1;
 	
 	vga.set_cursor(&vga, row, col);
 }
