@@ -23,10 +23,17 @@ k_uint8_t kernel_stack[KERNELSTACKSIZE];
 
 extern void switch_to_user_mode(void *user_stack_ptr, void *user_entry);
 
-void kinit(struct gdt_entry *gdt, struct tss_entry *tss, struct ps2_driver *ps2)
+void	STOM(void *user_stack_ptr, void *user_entry)
+{
+	putstr("Switching to user mode...\n");
+	switch_to_user_mode(user_stack_ptr, user_entry);
+}
+
+void	kinit(struct gdt_entry *gdt, struct tss_entry *tss, struct ps2_driver *ps2)
 {
 	// Fill and load GDT with segments and TSS
 	setup_gdt(gdt, tss);
+
 	// Serial port communication
 	serial_init();
 
@@ -40,7 +47,7 @@ void kinit(struct gdt_entry *gdt, struct tss_entry *tss, struct ps2_driver *ps2)
 
 void userHello()
 {
-	putstr("Hello from user mode!\n");
+	// putstr("Hello from user mode!\n");
 	while (1);
 }
 
@@ -48,7 +55,7 @@ void userHello()
 void kernel(unsigned long magic, unsigned long addr)
 {
 	static struct tss_entry tss;
-	// GDTable is located at 0x800
+	// GDTable is located at 0x800 (see linker)
 	static struct gdt_entry gdt[6] __attribute__((section(".gdt")));
 
 	(void)addr;
@@ -57,9 +64,6 @@ void kernel(unsigned long magic, unsigned long addr)
 		return;				 // loaded by a Multiboot2-compliant bootloader
 
 	kinit(gdt, &tss, &ps2);
-
-	// top of the user stack
-	// switch_to_user_mode(user_stack + USERSTACKSIZE - 4, userHello);
 
 	putstr("Welcome to minishell\n");
 

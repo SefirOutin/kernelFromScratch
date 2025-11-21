@@ -5,6 +5,11 @@
 extern struct vga_console	vga;
 extern struct ps2_driver	ps2;
 
+extern k_uint8_t user_stack[];
+
+extern void	STOM(void *user_stack_ptr, void *user_entry);
+extern void	userHello();
+
 //  Limited to width of screen for now
 void	readline(char *buffer)
 {
@@ -33,7 +38,9 @@ void	(*builtins[64])() = {
 	dump_stack_builtin,
 	reboot,
 	halt,
-	clear
+	clear,
+	STOM,
+
 };
 
 int	decode_cmd(char *buffer)
@@ -56,11 +63,15 @@ int	decode_cmd(char *buffer)
 		ret = 2;
 	else if (!strcmp("clear", buffer))
 		ret = 3;
+	else if (!strcmp("usermode", buffer))
+		ret = 4;
 
 	// Restore deleted char
 	buffer[i] = save;
 	return (ret);
 }
+
+#define USERSTACKSIZE 4096
 
 void	microshell()
 {
@@ -76,9 +87,13 @@ void	microshell()
 		if (ret < 0)
 			putstr("error: cmd not found\n");
 
-		if (ret < 0 || ret > 3)
+		if (ret < 0 || ret > 4)
 			continue;
 
-		builtins[ret]();
+		// top of the user stack
+		if (ret == 4)
+			 STOM(user_stack + USERSTACKSIZE - 4, userHello);
+		else
+			builtins[ret]();
 	}
 }
