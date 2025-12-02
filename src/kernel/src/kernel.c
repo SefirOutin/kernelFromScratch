@@ -51,21 +51,46 @@ void userHello()
 	while (1);
 }
 
+void parse_boot_struct(k_uint32_t *boot_info)
+{
+	int i = 0;
+	// k_uint8_t *tmp = boot_info;
+	while (i < 1280 / 4)
+	{
+		printf("%X ", boot_info[i]);
+		if (!(i % 10))
+			printf("\n");
+		i++;
+	}
+	return ;
+	printf("s[0] %d | addr: %d\n", *boot_info, boot_info);
+	boot_info += 2;								// skip first tag
+	printf("s[0] %d | addr: %d\n", *boot_info, boot_info);
+	boot_info = (k_uint32_t *)(((k_uint32_t)boot_info + 7) & ~7);
+	printf("s[0] %d | addr: %d\n", *boot_info, boot_info);
+	while (*boot_info != 4 && *boot_info != 0)
+	{
+		printf("type: %d | size: %d | base: %X\n", *boot_info, *(boot_info + 1), *(boot_info + 2));
+		boot_info += (*(boot_info + 1)) / 4;	// skip tag size bytes
+		boot_info = (k_uint32_t *)(((k_uint32_t)boot_info + 7) & ~7);	// skip to next 8-bytes aligned addr
+	}
+	printk(LOG_INFO, "type: %d\nsize: %d\nlower: %X\nupper:%X\n", *boot_info, *(boot_info + 1), *(boot_info + 2), *(boot_info + 3));
+}
 
-void kernel(unsigned long magic, unsigned long addr)
+void kernel(k_uint32_t magic, k_uint32_t *addr)
 {
 	static struct tss_entry tss;
 	// GDTable is located at 0x800 (see linker)
 	static struct gdt_entry gdt[6] __attribute__((section(".gdt")));
-
-	(void)addr;
 
 	if (magic != 0x36d76289) // magic value given by GRUB indicating it was
 		return;				 // loaded by a Multiboot2-compliant bootloader
 
 	kinit(gdt, &tss, &ps2);
 
+	printf("kernel addr: %p\n", kernel);
+	parse_boot_struct(addr);
+	
 	putstr("Welcome to minishell\n");
-
 	microshell();
 }
