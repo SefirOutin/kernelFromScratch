@@ -62,19 +62,21 @@ void	parse_mmap(k_uint32_t *boot_info, struct multiboot_tag_mmap *mmap)
 	mmap->size = *(boot_info + 1);
 	mmap->entry_size = *(boot_info + 2);
 	mmap->entry_version = *(boot_info + 3);
+	limit_addr = ((k_uint32_t)boot_info + mmap->size);
 	boot_info += 4;				// skip infos just fetched
 
-	limit_addr = (k_uint32_t)((k_uint8_t *)boot_info + mmap->size);
+	printf("loop...\n");
+	printf("1: %u | 2: %u\n", boot_info, limit_addr);
 	while (boot_info < (k_uint32_t *)limit_addr)
 	{
-		printf("1: %u | 2: %u", boot_info, limit_addr);
+		printf("1: %u | 2: %u ", boot_info, limit_addr);
 		printf("phys addr: \n", *boot_info);
 		entry = &mmap->entries[i];
 		entry->addr = *(k_uint64_t *)boot_info;
 		entry->len = *((k_uint64_t *)boot_info + 1);
 		entry->type = *(boot_info + 4);
 		entry->zero = *(boot_info + 5);
-		boot_info = (k_uint32_t *)((k_uint8_t *)boot_info + mmap->entry_size);
+		boot_info = (k_uint32_t *)((k_uint32_t)boot_info + mmap->entry_size);
 	}
 }
 
@@ -109,7 +111,7 @@ void	parse_boot_struct(k_uint32_t *boot_info, struct multiboot_tag_mmap *mmap)
 	while (*boot_info != 6 && *boot_info != 0)	// search for memory map
 	{
 		size = boot_info[1];					// size of tag is 2nd member of struct
-		boot_info = (k_uint32_t *)((k_uint8_t *)(boot_info) + size);	// bypass uint32 pointer arithmetic
+		boot_info = (k_uint32_t *)((k_uint32_t)(boot_info) + size);	// bypass uint32 pointer arithmetic
 		boot_info = (k_uint32_t *)(((k_uint32_t)(boot_info) + 7) & ~7);	// skip to next 8-bytes aligned addr
 	}
 	if (*boot_info == 6)
