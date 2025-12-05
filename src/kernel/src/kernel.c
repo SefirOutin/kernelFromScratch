@@ -51,45 +51,89 @@ void userHello()
 	while (1);
 }
 
-void parse_boot_struct(k_uint32_t *boot_info)
+void	parse_mmap(k_uint32_t *boot_info, struct multiboot_tag_mmap *mmap)
 {
-	int i = 0;
-	// k_uint8_t *tmp = boot_info;
-	while (i < 1280 / 4)
+	size_t i = 0;
+	struct multiboot_mmap_entry *entry;
+	k_uint32_t	limit_addr;
+	
+	printf("parsing mmap...\n");
+
+	mmap->size = *(boot_info + 1);
+	mmap->entry_size = *(boot_info + 2);
+	mmap->entry_version = *(boot_info + 3);
+	boot_info += 4;				// skip infos just fetched
+
+	limit_addr = (k_uint32_t)((k_uint8_t *)boot_info + mmap->size);
+	while (boot_info < (k_uint32_t *)limit_addr)
 	{
-		printf("%X ", boot_info[i]);
-		if (!(i % 10))
-			printf("\n");
+		printf("1: %u | 2: %u", boot_info, limit_addr);
+		printf("phys addr: \n", *boot_info);
+		entry = &mmap->entries[i];
+		entry->addr = *(k_uint64_t *)boot_info;
+		entry->len = *((k_uint64_t *)boot_info + 1);
+		entry->type = *(boot_info + 4);
+		entry->zero = *(boot_info + 5);
+		boot_info = (k_uint32_t *)((k_uint8_t *)boot_info + mmap->entry_size);
+	}
+}
+
+void	print_mmap(struct multiboot_tag_mmap *mmap)
+{
+	int	i = 0, nb_entries = (mmap->size - 16) / mmap->entry_size;
+	printf("mmap struct\nsize: %u, entry_size: %u, entry_version: %u\n", mmap->size, mmap->entry_size, mmap->entry_version);
+	printf("nb entries: %u\n", nb_entries);
+
+	while (i < nb_entries)
+	{
+		printf("entry_%d: addr: %X, len: %u, type: %d\n", i, mmap->entries[i].addr, mmap->entries[i].len, mmap->entries[i].type);
 		i++;
 	}
-	return ;
-	printf("s[0] %d | addr: %d\n", *boot_info, boot_info);
-	boot_info += 2;								// skip first tag
-	printf("s[0] %d | addr: %d\n", *boot_info, boot_info);
-	boot_info = (k_uint32_t *)(((k_uint32_t)boot_info + 7) & ~7);
-	printf("s[0] %d | addr: %d\n", *boot_info, boot_info);
-	while (*boot_info != 4 && *boot_info != 0)
+}
+
+void	parse_boot_struct(k_uint32_t *boot_info, struct multiboot_tag_mmap *mmap)
+{
+	k_uint32_t size, type;
+	int i = 0;
+	unsigned char str[400];
+	k_uint8_t *tmp = (k_uint8_t *)boot_info;
+	while (i < 1280 / 4)
 	{
-		printf("type: %d | size: %d | base: %X\n", *boot_info, *(boot_info + 1), *(boot_info + 2));
-		boot_info += (*(boot_info + 1)) / 4;	// skip tag size bytes
-		boot_info = (k_uint32_t *)(((k_uint32_t)boot_info + 7) & ~7);	// skip to next 8-bytes aligned addr
+		printf("%u ", tmp[i]);
+		i++;
+		if (!(i % 20))
+			printf("\n");
+
 	}
-	printk(LOG_INFO, "type: %d\nsize: %d\nlower: %X\nupper:%X\n", *boot_info, *(boot_info + 1), *(boot_info + 2), *(boot_info + 3));
+	boot_info += 2;								// skip first tag, still aligned
+	while (*boot_info != 6 && *boot_info != 0)	// search for memory map
+	{
+		size = boot_info[1];					// size of tag is 2nd member of struct
+		boot_info = (k_uint32_t *)((k_uint8_t *)(boot_info) + size);	// bypass uint32 pointer arithmetic
+		boot_info = (k_uint32_t *)(((k_uint32_t)(boot_info) + 7) & ~7);	// skip to next 8-bytes aligned addr
+	}
+	if (*boot_info == 6)
+	{
+		parse_mmap(boot_info, mmap);
+		print_mmap(mmap);
+	}
+	// printf("mmap: size: %u, entry_size: %u, e_version: %u", *(boot_info + 1), *(boot_info + 2), *(boot_info + 3));
 }
 
 void kernel(k_uint32_t magic, k_uint32_t *addr)
 {
+	struct multiboot_tag_mmap mmap;
 	static struct tss_entry tss;
 	// GDTable is located at 0x800 (see linker)
 	static struct gdt_entry gdt[6] __attribute__((section(".gdt")));
 
 	if (magic != 0x36d76289) // magic value given by GRUB indicating it was
 		return;				 // loaded by a Multiboot2-compliant bootloader
-
+		
 	kinit(gdt, &tss, &ps2);
-
+		
 	printf("kernel addr: %p\n", kernel);
-	parse_boot_struct(addr);
+	parse_boot_struct(addr, &mmap);
 	
 	putstr("Welcome to minishell\n");
 	microshell();
