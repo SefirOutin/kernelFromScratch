@@ -50,7 +50,7 @@ $(ISO): $(ELF)
 
 # === Launch with QEMU ===
 run: $(ISO)
-	qemu-system-i386 -cdrom $(ISO) -serial stdio 
+	qemu-system-i386 -cdrom $(ISO) -serial stdio -m 2G
 
 # === Basic cleaning ===
 clean:

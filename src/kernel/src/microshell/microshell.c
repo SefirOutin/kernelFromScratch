@@ -7,8 +7,8 @@ extern struct ps2_driver	ps2;
 
 extern k_uint8_t user_stack[];
 
-extern void	STOM(void *user_stack_ptr, void *user_entry);
 extern void	userHello();
+void		STUM(void *user_stack_ptr, void *user_entry);
 
 //  Limited to width of screen for now
 void	readline(char *buffer)
@@ -39,7 +39,7 @@ void	(*builtins[64])() = {
 	reboot,
 	halt,
 	clear,
-	STOM,
+	STUM,
 
 };
 
@@ -92,7 +92,7 @@ void	microshell()
 
 		// top of the user stack
 		if (ret == 4)
-			 STOM(user_stack + USERSTACKSIZE - 4, userHello);
+			 STUM(user_stack + USERSTACKSIZE - 4, userHello);
 		else
 			builtins[ret]();
 	}
