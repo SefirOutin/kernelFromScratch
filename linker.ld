@@ -50,10 +50,13 @@ SECTIONS
 		*(.bss)
 	}
 
-	/* GDT put at 0x800 as asked in subject*/
-    . = 0x00000800;
-    .gdt ALIGN(8) : { *(.gdt) }
+	/* used to get kernel end in RAM */
+	_kernel_end = .;
 
 	/* The compiler may produce other sections, by default it will put them in
 	   a segment with the same name. Simply add stuff here as needed. */
+	
+	/* GDT put at 0x800 as asked in subject*/
+    . = 0x00000800;
+    .gdt ALIGN(8) : { *(.gdt) }
 }

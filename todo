@@ -1,0 +1,24 @@
+paging management:
+
+	- parse -> store memory map from grub
+	
+	- create structs for page directory&table entries
+	
+	- page frame allocator (buddy - arrays of free lists)
+	
+	- User & Kernel space memory
+	
+	- early mapping - identity map
+	
+	- load page directory in CR3
+	
+	- map kernel
+	
+	- virtual memory functions/manager 
+	
+	- handle page faults (ie. page not present) - ???
+
+
+memory allocation:
+
+	- 

@@ -21,6 +21,7 @@ struct ps2_driver ps2;
 k_uint8_t user_stack[USERSTACKSIZE];
 k_uint8_t kernel_stack[KERNELSTACKSIZE];
 
+extern char _kernel_end; // defined in linker script
 extern void switch_to_user_mode(void *user_stack_ptr, void *user_entry);
 
 void	STUM(void *user_stack_ptr, void *user_entry)
@@ -53,6 +54,11 @@ void userHello()
 
 void	parse_boot_struct(k_uint32_t *boot_info, struct multiboot_tag_mmap *mmap);
 
+static inline void *aligned_addr(void *addr, k_uint32_t align)
+{
+	return ((void *)(((k_uint32_t)addr + align - 1) & ~(align - 1)));
+}
+
 void kernel(k_uint32_t magic, k_uint32_t *addr)
 {
 	struct multiboot_tag_mmap mmap;
@@ -63,8 +69,9 @@ void kernel(k_uint32_t magic, k_uint32_t *addr)
 	if (magic != 0x36d76289) // magic value given by GRUB indicating it was
 		return;				 // loaded by a Multiboot2-compliant bootloader
 		
-	parse_boot_struct(addr, &mmap);
 	kinit(gdt, &tss, &ps2);
+	printf("kernel end: %p\n", aligned_addr(&_kernel_end, 4096));
+	parse_boot_struct(addr, &mmap);
 
 	putstr("Welcome to microshell\n");
 	microshell();
