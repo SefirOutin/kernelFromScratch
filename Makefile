@@ -20,9 +20,11 @@ CFLAGS  := -W -Wall -m32 -g -ffreestanding -fno-builtin -fno-stack-protector -no
            -I $(SRC_DIR)/kernel/modules/core/include \
            -I $(SRC_DIR)/kernel/modules/arch/include \
            -I $(SRC_DIR)/kernel/modules/drivers/include \
+           -I $(SRC_DIR)/kernel/modules/drivers/vga/include \
            -I $(SRC_DIR)/kernel/modules/lib/include \
            -I $(SRC_DIR)/kernel/modules/memory/include \
-           -I $(SRC_DIR)/kernel/modules/shell/include
+           -I $(SRC_DIR)/kernel/modules/shell/include \
+           -I $(SRC_DIR)/kernel/modules/shell/builtins/include
 LDFLAGS := -m elf_i386 -T linker.ld
 
 # === Automatically find sources ===
