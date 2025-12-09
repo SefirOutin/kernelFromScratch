@@ -55,7 +55,8 @@ static int read_byte_ps2_timeout(struct ps2_driver *self)
 
 void send_cmd_ps2(k_uint8_t cmd)
 {
-    while (inb(PS2StatusCmd) & BIT(1)); 
+    while (inb(PS2StatusCmd) & BIT(1))
+		;
     
 	outb(PS2StatusCmd, cmd);
 }
@@ -167,7 +168,7 @@ static void identify_ps2_device(struct ps2_driver *self, int port, int active_ch
 {
 	int ret;
 
-	if (!(active_channels & (1 << port - 1)))		// skip inactive ports
+	if (!(active_channels & (1 << (port - 1))))		// skip inactive ports
 		return ;
 
 	if (port == 2)

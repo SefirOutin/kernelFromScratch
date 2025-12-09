@@ -27,7 +27,7 @@ k_uint8_t serial_putchar(char c)
 unsigned int serial_write(const char* s, unsigned int len)
 {
     size_t i = 0;
-    for (; *s; ++s, i++)
+    for ( ; *s || i <= len; ++s, i++)
     {
         if (*s == '\n') serial_putchar('\r'); // CRLF for comfy terminals
         serial_putchar(*s);

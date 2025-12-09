@@ -72,6 +72,7 @@ char translate(struct keyboard *self, k_uint8_t scancode)
 void	extended_keys(struct keyboard *self, struct ps2_driver *ps2_driver, k_uint8_t scancode)
 {
 	int		row = vga.row, col = vga.col;
+	(void)self;
 
 	if (scancode ==  KEYRELEASED) {
 		ps2_driver->read_byte(ps2_driver);

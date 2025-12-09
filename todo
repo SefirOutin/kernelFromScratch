@@ -19,6 +19,12 @@ paging management:
 	- handle page faults (ie. page not present) - ???
 
 
-memory allocation:
+page allocation:
+
+	- usable ram - (kernel + stack)
+
+	- buddy allocator:
+		- init and mark pages (reserved/free)
+		- free lists algo
 
 	- 

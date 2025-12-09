@@ -11,7 +11,7 @@ void	*memcpy(void *dest, const void *src, size_t size)
 	if (!src && !dest)
 		return ((void *)0);
 
-		while (i++ < size)
+	while (i++ < size)
 	{
 		*d++ = *s++;
 	}
