@@ -9,6 +9,7 @@
 #include "gdt.h"
 #include "tss.h"
 #include "printk.h"
+#include "buddy.h"
 
 #include "microshell.h"
 
@@ -53,12 +54,14 @@ void userHello()
 
 void	parse_boot_struct(k_uint32_t *boot_info, struct multiboot_tag_mmap *mmap);
 
+void	init_page_allocator(k_uint32_t start_usable, k_uint32_t len);
 
 
 void kernel(k_uint32_t magic, k_uint32_t *addr)
 {
-	struct multiboot_tag_mmap mmap;
-	static struct tss_entry tss;
+	struct multiboot_tag_mmap	mmap;
+	static struct tss_entry 	tss;
+	buddy_allocator_t			ppage_manager;
 	// GDTable is located at 0x800 (see linker)
 	static struct gdt_entry gdt[6] __attribute__((section(".gdt")));
 
@@ -67,7 +70,8 @@ void kernel(k_uint32_t magic, k_uint32_t *addr)
 		
 	kinit(gdt, &tss, &ps2);
 	parse_boot_struct(addr, &mmap);
-
+	buddy_constructor(&ppage_manager, &mmap.entries[3]);
+	
 	putstr("Welcome to OS\n");
 	microshell();
 }
