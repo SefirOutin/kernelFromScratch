@@ -1,2 +1,6 @@
-.vscode/
+.vscode
 log
+build
+iso
+*.iso
+*.elf

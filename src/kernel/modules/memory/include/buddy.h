@@ -41,7 +41,7 @@ typedef struct buddy_allocator
 	unsigned int		total_pages;
 
 	// Methods
-	void	*(*get_page)(struct buddy_allocator *self);
+	void	*(*get_page)(struct buddy_allocator *self, unsigned int nb_request);
 	void	(*add_block)(struct buddy_allocator *self, int page_idx, int order);
 
 } buddy_allocator_t;
