@@ -36,13 +36,14 @@ typedef struct buddy_allocator
 	// Attributs
 	page_descriptor_t	*page_info;
 	size_t				size_page_info;
-	free_block_t		*order[MAX_ORDER];
+	free_block_t		*order[MAX_ORDER + 1];
 	size_t				first_free_page, last_free_page;
 	unsigned int		total_pages;
 
 	// Methods
-	void	*(*get_page)(struct buddy_allocator *self, unsigned int nb_request);
+	void	*(*alloc_pages)(struct buddy_allocator *self, unsigned int nb_request);
 	void	(*add_block)(struct buddy_allocator *self, int page_idx, int order);
+
 
 } buddy_allocator_t;
 

@@ -9,7 +9,7 @@
 
 extern k_uint32_t _kernel_end; // defined in linker script
 
-void	*get_page(buddy_allocator_t *self, unsigned int nb_request);
+void	*alloc_pages(buddy_allocator_t *self, unsigned int nb_request);
 void	print_buddy_metadata(buddy_allocator_t *self);
 
 void printmem(void *ptr, size_t len)
@@ -45,6 +45,11 @@ static inline k_uint32_t	page_idx_to_addr(size_t page_idx)
 {
 	return (page_idx * PAGE_SIZE);
 }
+
+static inline unsigned int	addr_to_idx(k_uint32_t addr)
+{
+	return (addr / PAGE_SIZE);
+} 
 
 
 void	update_pages(buddy_allocator_t *self, size_t page_idx, int order)
@@ -88,12 +93,12 @@ void	add_block(buddy_allocator_t *self, size_t page_idx, int order)
 	if (!new)
 		return ;
 
-	if (!self->order[order - 1])	// if no element in list
-		self->order[order - 1] = new;
+	if (!self->order[order])	// if no element in list
+		self->order[order] = new;
 
 	else
 	{
-		tmp = self->order[order - 1];
+		tmp = self->order[order];
 		last_block(tmp)->next = new;
 	}
 }
@@ -109,9 +114,9 @@ int	init_buddy_allocator(buddy_allocator_t *self, struct multiboot_mmap_entry *m
 	
 	self->page_info = (page_descriptor_t *)aligned_addr(&_kernel_end, 4096);
 	self->size_page_info = mmap_entry->len / 4096 * sizeof(page_descriptor_t);
-	page_info_end = ((size_t)self->page_info + self->size_page_info) / PAGE_SIZE;
-	self->first_free_page = mmap_entry->addr / PAGE_SIZE;
-	self->last_free_page = (mmap_entry->addr + mmap_entry->len) / PAGE_SIZE;
+	page_info_end = addr_to_idx((size_t)self->page_info + self->size_page_info);
+	self->first_free_page = addr_to_idx(mmap_entry->addr);
+	self->last_free_page = addr_to_idx(mmap_entry->addr + mmap_entry->len);
 
 	memset(self->page_info, 0, self->size_page_info);
 
@@ -154,15 +159,53 @@ int	buddy_constructor(buddy_allocator_t *self, struct multiboot_mmap_entry *mmap
 {
 	memset(self, 0, sizeof(buddy_allocator_t));
 
-	self->get_page = get_page;
+	self->alloc_pages = alloc_pages;
 
 	init_buddy_allocator(self, mmap_entry);
 	return (0);
 }
 
-void	*get_page(buddy_allocator_t *self, unsigned int nb_request)
+void	add_head(buddy_allocator_t *self, free_block_t *new, unsigned int order)
 {
-	(void)self;
+	if (self->order[order] == NULL)
+		self->order[order] = new;
+	else
+	{
+		new->next = self->order[order];
+		self->order[order] = new;
+	}
+}
+
+void	split_block(buddy_allocator_t *self, unsigned int order)
+{
+	free_block_t	*tmp;
+	size_t			index;
+
+	if (order < 1 || order > MAX_ORDER)
+		return ;
+
+	tmp = self->order[order];
+	self->order[order] = tmp->next;
+
+	order--;
+	index = addr_to_idx(tmp);
+	tmp = new_block(self, index + (1 << (order)), order);
+	add_head(self, tmp, order);
+	tmp = new_block(self, index, order);
+	add_head(self, tmp, order);
+}
+
+void	*alloc_pages(buddy_allocator_t *self, unsigned int order)
+{
+	unsigned int target_order = order;
+
+	if (order > MAX_ORDER)
+		return (NULL);
+	while (target_order <= MAX_ORDER && self->order[target_order] == NULL)
+		target_order++;
+	
+	// if (target_order > order)
+	// 	split_block
 	return (NULL);
 }
 
@@ -170,11 +213,12 @@ void	print_buddy_metadata(buddy_allocator_t *self)
 {
 	free_block_t	*tmp;
 
+	split_block(self, 4);
 	printf("BUDDY ALLOCATOR\n");
-	for (int i = MAX_ORDER - 1; i >= 0; i--)
+	for (int i = MAX_ORDER; i >= 0; i--)
 	{
 		tmp = self->order[i];
-		printf("ORDER%d:\n", i + 1);
+		printf("ORDER%d:\n", i);
 		while (tmp)
 		{
 			printf("%p, size: %u | ", tmp, self->page_info[VIRT_IDX((k_uint32_t)tmp / PAGE_SIZE)].state >> 2);
