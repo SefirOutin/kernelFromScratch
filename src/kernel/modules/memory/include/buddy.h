@@ -5,6 +5,7 @@
 #include "multiboot2.h"
 
 #define PAGE_SIZE 4096
+#define PAGE_SHIFT 12
 #define MAX_ORDER 10
 
 /*	bit[0] -> used/free

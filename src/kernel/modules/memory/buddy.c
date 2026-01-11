@@ -2,7 +2,9 @@
 #include "lib.h"
 
 #define VIRT_IDX(a) (a - self->first_free_page)
-#define USE_BIT (1)
+#define GET_FLAG_PAGE_INFO(index) (self->page_info[index].state)
+#define FREE_BIT 0
+#define USED_BIT 1
 #define HEAD_OF_BLOCK_BIT (1 << 1)
 #define ORDER_BITS(order) (order << 2)
 #define BLOCK_SIZE(order) (1 << order)
@@ -31,7 +33,7 @@ static inline void *aligned_addr(void *addr, k_uint32_t align)
 	return ((void *)(((k_uint32_t)addr + align - 1) & ~(align - 1)));
 }
 
-static inline int aligned_idx(size_t page_idx, int order)
+static inline size_t aligned_idx(size_t page_idx, int order)
 {
 	return (((page_idx + (1 << order) - 1) & ~((1 << order) - 1)));
 }
@@ -46,21 +48,41 @@ static inline k_uint32_t	page_idx_to_addr(size_t page_idx)
 	return (page_idx * PAGE_SIZE);
 }
 
-static inline unsigned int	addr_to_idx(k_uint32_t addr)
+static inline size_t	addr_to_idx(k_uint32_t addr)
 {
-	return (addr / PAGE_SIZE);
+	return (addr >> PAGE_SHIFT);
 } 
 
-
-void	update_pages(buddy_allocator_t *self, size_t page_idx, int order)
+static inline bool	is_head(unsigned char flag)
 {
-	int	block_size = 1 << order;		// max 1024 pages
-
-	for (int i = 0; i < block_size; i++)
-		self->page_info[VIRT_IDX(page_idx + i)].state = (k_uint8_t)order << 2;	// set order bits
-	
-	self->page_info[VIRT_IDX(page_idx)].state |= 1 << 1;			// set head of block bit for first page
+	return (flag & HEAD_OF_BLOCK_BIT);
 }
+
+static inline bool	is_used(unsigned char flag)
+{
+	return (flag & USED_BIT);
+}
+
+static inline bool	same_order(unsigned char flag, unsigned int order)
+{
+	return (((flag >> 2) & 0xF0) == order);
+}
+
+static inline unsigned int	parse_order(unsigned char flag)
+{
+	return ((flag >> 2) & 0xF0);
+}
+
+static inline void update_page_info(buddy_allocator_t *self, size_t index, k_uint8_t flag, int order)
+{
+	size_t	block_size = BLOCK_SIZE(order);
+
+	self->page_info[index].state = flag | HEAD_OF_BLOCK_BIT | ORDER_BITS(order);
+
+	while (block_size)
+		GET_FLAG_PAGE_INFO(index + block_size--) = flag;
+}
+
 
 void	*new_block(buddy_allocator_t *self, size_t page_idx, int order)
 {
@@ -72,7 +94,7 @@ void	*new_block(buddy_allocator_t *self, size_t page_idx, int order)
 	new = (free_block_t *)page_idx_to_addr(page_idx);	// the node lives at that addr (1st page of block)
 	new->next = NULL;
 
-	update_pages(self, page_idx, order);
+	update_page_info(self, page_idx, FREE_BIT, order);
 
 	return (new);
 }
@@ -87,7 +109,7 @@ free_block_t	*last_block(free_block_t *head)
 
 void	add_block(buddy_allocator_t *self, size_t page_idx, int order)
 {
-	free_block_t	*new, *tmp;
+	free_block_t	*new, *head;
 	
 	new = new_block(self, page_idx, order);
 	if (!new)
@@ -98,14 +120,13 @@ void	add_block(buddy_allocator_t *self, size_t page_idx, int order)
 
 	else
 	{
-		tmp = self->order[order];
-		last_block(tmp)->next = new;
+		head = self->order[order];
+		last_block(head)->next = new;
 	}
 }
 
 /*
 	max 4MB blocks;
-
 */
 int	init_buddy_allocator(buddy_allocator_t *self, struct multiboot_mmap_entry *mmap_entry)
 {
@@ -122,7 +143,7 @@ int	init_buddy_allocator(buddy_allocator_t *self, struct multiboot_mmap_entry *m
 
 	current_page = self->first_free_page;						// begin at start of usable ram
 	while (current_page <= page_info_end)						// mark kernel memory as used and skip it
-		self->page_info[VIRT_IDX(current_page++)].state = 1;
+		self->page_info[VIRT_IDX(current_page++)].state = USED_BIT;
 	
 	order = MAX_ORDER;
 	while (current_page < self->last_free_page)
@@ -188,8 +209,8 @@ void	split_block(buddy_allocator_t *self, unsigned int order)
 	self->order[order] = tmp->next;
 
 	order--;
-	index = addr_to_idx(tmp);
-	tmp = new_block(self, index + (1 << (order)), order);
+	index = addr_to_idx((k_uint32_t)tmp);
+	tmp = new_block(self, index + BLOCK_SIZE(order), order);
 	add_head(self, tmp, order);
 	tmp = new_block(self, index, order);
 	add_head(self, tmp, order);
@@ -197,23 +218,99 @@ void	split_block(buddy_allocator_t *self, unsigned int order)
 
 void	*alloc_pages(buddy_allocator_t *self, unsigned int order)
 {
-	unsigned int target_order = order;
+	free_block_t	*new_alloc;
+	size_t			index;
+	unsigned int 	target_order = order;
 
 	if (order > MAX_ORDER)
 		return (NULL);
-	while (target_order <= MAX_ORDER && self->order[target_order] == NULL)
+
+	// find next available free block
+	while (target_order < MAX_ORDER && self->order[target_order] == NULL)
 		target_order++;
 	
-	// if (target_order > order)
-	// 	split_block
+	if (target_order == MAX_ORDER && self->order[target_order] == NULL)
+		return (NULL);		// OUT OF MEMORY
+
+	// if suitable block bigger than requested, split until it matches
+	while (target_order > order)
+		split_block(self, target_order--);
+
+	new_alloc = self->order[order];
+	index = VIRT_IDX(addr_to_idx(new_alloc));
+	
+	self->order[order] = new_alloc->next;		//	remove from free list
+	
+	update_page_info(self, index, USED_BIT, order);
+
+	memset(new_alloc, 0, sizeof(free_block_t));		// clear data at start of the block REALLY NEEDED ?
+	return (new_alloc);
+}
+
+free_block_t	*find_block(free_block_t *head, size_t index)
+{
+	k_uintptr_t	addr = page_idx_to_addr(index);
+
+	if (!head)
+		return (NULL);
+	
+	while (head)
+	{
+		if (head == addr)
+			return (head);
+		head = head->next;
+	}
 	return (NULL);
+}
+
+static inline is
+
+void	merge_buddies(buddy_allocator_t *self, free_block_t *freed, unsigned int order)
+{
+	free_block_t	*new, *buddy;
+
+	buddy = (free_block_t *)page_idx_to_addr(addr_to_idx(freed) ^ BLOCK_SIZE(order));
+
+	if (freed > buddy)
+		GET_FLAG_PAGE_INFO(addr_to_idx(freed)) = FREE_BIT;
+	else
+		GET_FLAG_PAGE_INFO(addr_to_idx(buddy)) = FREE_BIT;
+	
+	
+}
+
+void	free_pages(buddy_allocator_t *self, k_uintptr_t addr)
+{
+	size_t			buddy_idx, current_idx = VIRT_IDX(addr_to_idx(addr));
+	unsigned char	flag = GET_FLAG_PAGE_INFO(current_idx);
+	unsigned int	depth = 0, order = parse_order(flag);
+	free_block_t	*freed;
+
+	if (!is_head(flag) && !is_used(flag))
+		return ;
+	
+
+	freed = new_block(self, current_idx, order);
+	add_head(self, freed, order);
+
+	buddy_idx = VIRT_IDX(current_idx ^ BLOCK_SIZE(order));
+	while (!is_used(GET_FLAG_PAGE_INFO(buddy_idx)) && order <= MAX_ORDER)
+	{
+		merge_buddies(self, freed, BLOCK_SIZE(order++));
+		buddy_idx = VIRT_IDX(current_idx ^ BLOCK_SIZE(order));
+	}
+	
+
+
 }
 
 void	print_buddy_metadata(buddy_allocator_t *self)
 {
 	free_block_t	*tmp;
+	k_uintptr_t		*alloc;
 
-	split_block(self, 4);
+	alloc = alloc_pages(self, 0);
+	// free_pages(self, alloc);
 	printf("BUDDY ALLOCATOR\n");
 	for (int i = MAX_ORDER; i >= 0; i--)
 	{
@@ -221,10 +318,20 @@ void	print_buddy_metadata(buddy_allocator_t *self)
 		printf("ORDER%d:\n", i);
 		while (tmp)
 		{
-			printf("%p, size: %u | ", tmp, self->page_info[VIRT_IDX((k_uint32_t)tmp / PAGE_SIZE)].state >> 2);
+			printf("%p, size: %u | ", tmp, self->page_info[VIRT_IDX(addr_to_idx(tmp))].state >> 2);
 			tmp = tmp->next;
 		}
 		printf("\n");
 	}
-
+	
+	printf("alloc addr:%p\n", alloc);
+	// printf("%d\n", (42 - 1) % 40);
+	for (size_t i = 0; i < self->size_page_info; i++)
+	{
+		if (!i || (!((i - 1) % 10) && i != 1))
+			printf("%p: ", page_idx_to_addr(i + self->first_free_page));
+		printf("%X ", self->page_info[i].state);
+		if (!(i % 10) && i)
+			printf("\n");
+	}
 }

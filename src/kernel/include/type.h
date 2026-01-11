@@ -7,6 +7,7 @@ typedef unsigned short		k_uint16_t;
 typedef unsigned int		k_uint32_t;
 typedef unsigned long long	k_uint64_t;
 typedef unsigned int		size_t;
+typedef unsigned int		k_uintptr_t;
 
 #define true  1
 #define false 0
