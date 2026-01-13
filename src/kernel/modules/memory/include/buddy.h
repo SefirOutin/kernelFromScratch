@@ -13,22 +13,22 @@
 	bit[2-5] -> buddy order
 	bit[6-7] -> free for futur use
 */
-typedef struct page_descriptor
+typedef struct page_descriptor_s
 {
 	k_uint8_t	state;
 
 } page_descriptor_t;
 
-typedef struct free_block
+typedef struct free_block_s
 {
 	struct free_block	*next;
 } free_block_t;
 
-// typedef struct buddy_free_lists
-// {
-// 	free_block_t	*head;
-
-// } buddy_free_lists_t;
+typedef struct free_area
+{
+	free_block_t	*head;
+	unsigned long	*map;
+} free_area_t;
 
 
 
@@ -37,7 +37,7 @@ typedef struct buddy_allocator
 	// Attributs
 	page_descriptor_t	*page_info;
 	size_t				size_page_info;
-	free_block_t		*order[MAX_ORDER + 1];
+	free_area_t			free_area[MAX_ORDER + 1];
 	size_t				first_free_page, last_free_page;
 	unsigned int		total_pages;
 
