@@ -21,6 +21,7 @@ typedef struct page_descriptor_s
 
 typedef struct free_block_s
 {
+	struct free_block	*prev;
 	struct free_block	*next;
 } free_block_t;
 
