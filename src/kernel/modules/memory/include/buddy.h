@@ -21,8 +21,8 @@ typedef struct page_descriptor_s
 
 typedef struct free_block_s
 {
-	struct free_block	*prev;
-	struct free_block	*next;
+	struct free_block_s	*prev;
+	struct free_block_s	*next;
 } free_block_t;
 
 typedef struct free_area
@@ -33,7 +33,7 @@ typedef struct free_area
 
 
 
-typedef struct buddy_allocator
+typedef struct page_allocator
 {
 	// Attributs
 	page_descriptor_t	*page_info;
@@ -43,12 +43,21 @@ typedef struct buddy_allocator
 	unsigned int		total_pages;
 
 	// Methods
-	void	*(*alloc_pages)(struct buddy_allocator *self, unsigned int nb_request);
-	void	(*add_block)(struct buddy_allocator *self, int page_idx, int order);
+	void	*(*alloc_pages)(struct page_allocator *self, unsigned int order);
+	void	(*free_pages)(struct page_allocator *self, void *addr);
+	void	(*add_block)(struct page_allocator *self, int page_idx, int order);
+	void	(*print_free_lists)(struct page_allocator *self);
 
 
-} buddy_allocator_t;
+} page_allocator_t;
 
-int buddy_constructor(buddy_allocator_t *self, struct multiboot_mmap_entry *mmap_entry);
+int buddy_constructor(page_allocator_t *self, struct multiboot_mmap_entry *mmap_entry);
+
+void			*list_new_node(void *addr);
+void			list_add_head(free_block_t **head, free_block_t *new);
+void			list_add_tail(free_block_t **head, free_block_t *new);
+void			list_remove(free_block_t **head, free_block_t *to_remove);
+
+free_block_t	*list_last(free_block_t *head);
 
 #endif

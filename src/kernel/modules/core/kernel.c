@@ -61,7 +61,7 @@ void kernel(k_uint32_t magic, k_uint32_t *addr)
 {
 	struct multiboot_tag_mmap	mmap;
 	static struct tss_entry 	tss;
-	static buddy_allocator_t	page_manager;
+	static page_allocator_t		page_manager;
 	// GDTable is located at 0x800 (see linker)
 	static struct gdt_entry gdt[6] __attribute__((section(".gdt")));
 
@@ -72,6 +72,22 @@ void kernel(k_uint32_t magic, k_uint32_t *addr)
 	parse_boot_struct(addr, &mmap);
 	buddy_constructor(&page_manager, &mmap.entries[3]);
 	
+	k_uintptr_t		*alloc, *alloc1, alloc2;
+
+	alloc = page_manager.alloc_pages(&page_manager, 4);
+	alloc1 = page_manager.alloc_pages(&page_manager, 4);
+	alloc2 = page_manager.alloc_pages(&page_manager, 4);
+	// alloc1 = page_manager.alloc_pages(&page_manager, 1);
+
+	// page_manager.free_pages(&page_manager, alloc);
+	// page_manager.free_pages(&page_manager, alloc1);
+	// page_manager.free_pages(&page_manager, alloc2);
+	
+	page_manager.print_free_lists(&page_manager);
+	printf("alloc addr:%p\n", alloc);
+	printf("alloc1 addr:%p\n", alloc1);
+	printf("alloc2 addr:%p\n", alloc2);
+
 	putstr("Welcome to OS\n");
 	microshell();
 }
