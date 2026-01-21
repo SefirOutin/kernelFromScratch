@@ -54,8 +54,6 @@ void userHello()
 
 void	parse_boot_struct(k_uint32_t *boot_info, struct multiboot_tag_mmap *mmap);
 
-void	init_page_allocator(k_uint32_t start_usable, k_uint32_t len);
-
 
 void kernel(k_uint32_t magic, k_uint32_t *addr)
 {
@@ -70,24 +68,36 @@ void kernel(k_uint32_t magic, k_uint32_t *addr)
 		
 	kinit(gdt, &tss, &ps2);
 	parse_boot_struct(addr, &mmap);
+	
 	buddy_constructor(&page_manager, &mmap.entries[3]);
 	
-	k_uintptr_t		*alloc, *alloc1, alloc2;
+	k_uintptr_t		*alloc[256];
 
-	alloc = page_manager.alloc_pages(&page_manager, 4);
-	alloc1 = page_manager.alloc_pages(&page_manager, 4);
-	alloc2 = page_manager.alloc_pages(&page_manager, 4);
-	// alloc1 = page_manager.alloc_pages(&page_manager, 1);
-
-	// page_manager.free_pages(&page_manager, alloc);
-	// page_manager.free_pages(&page_manager, alloc1);
-	// page_manager.free_pages(&page_manager, alloc2);
-	
+	printf("BEFORE:\n");
 	page_manager.print_free_lists(&page_manager);
-	printf("alloc addr:%p\n", alloc);
-	printf("alloc1 addr:%p\n", alloc1);
-	printf("alloc2 addr:%p\n", alloc2);
 
+	alloc[0] = page_manager.alloc_pages(&page_manager, 4);
+	alloc[1] = page_manager.alloc_pages(&page_manager, 4);
+	alloc[2] = page_manager.alloc_pages(&page_manager, 4);
+	alloc[3] = page_manager.alloc_pages(&page_manager, 0);
+	alloc[4] = page_manager.alloc_pages(&page_manager, 0);
+	alloc[5] = page_manager.alloc_pages(&page_manager, 0);
+	alloc[6] = page_manager.alloc_pages(&page_manager, 7);
+
+	// page_manager.free_pages(&page_manager, alloc2);
+	// page_manager.free_pages(&page_manager, alloc1);
+	// page_manager.free_pages(&page_manager, alloc);
+	
+	printf("AFTER:\n");
+	page_manager.print_free_lists(&page_manager);
+	for (int i = 0; i <= 6; i++)
+	{
+		printf("alloc[%d]: %p\n", i, alloc[i]);
+		page_manager.free_pages(&page_manager, alloc[i]);
+	}
+
+	printf("AFTER AFTER:\n");
+	page_manager.print_free_lists(&page_manager);
 	putstr("Welcome to OS\n");
 	microshell();
 }

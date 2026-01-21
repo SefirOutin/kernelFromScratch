@@ -16,9 +16,10 @@ void	list_remove(free_block_t **head, free_block_t *to_remove)
 	else
 	{
 		prev = to_remove->prev;
-		prev->next = to_remove->next;	
-		if (prev->next)
-			(prev->next)->prev = prev;
+		if (prev)
+			prev->next = to_remove->next;	
+		if (to_remove->next)
+			to_remove->next->prev = prev;
 	}
 	to_remove->next = NULL;
 	to_remove->prev = NULL;
@@ -27,11 +28,15 @@ void	list_remove(free_block_t **head, free_block_t *to_remove)
 void	list_add_head(free_block_t **head, free_block_t *new)
 {
 	if (*head == NULL)
+	{
+		new->prev = NULL;
+		new->next = NULL;
 		*head = new;
+	}
 	else
 	{
-		(*head)->prev = new;
 		new->next = *head;
+		(*head)->prev = new;
 		*head = new;
 	}
 }
@@ -60,10 +65,10 @@ void	list_add_tail(free_block_t **head, free_block_t *new)
 {
 	free_block_t	*last;
 	
-	if (!new)
+	if (!new || !head)
 		return ;
 	
-	if (!(*head))	// if no element in list
+	if (!(*head))
 		*head = new;
 	else
 	{
